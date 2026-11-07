@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SAM — Preferences</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<header></header>
+
+<main>
+<section class="screen" id="survey" aria-labelledby="survey-title">
+  <form class="panel" id="survey-form" novalidate>
+    <div class="stack" style="gap:6px">
+      <h1 id="survey-title">Tell SAM a little about you</h1>
+      <p class="muted">SAM uses this to build your For you page. Study resources are already included, so this is only about life outside class.</p>
+    </div>
+
+    <div class="fields">
+      <div class="field">
+        <label for="age">Age</label>
+        <select id="age">
+          <option value="">Choose</option>
+          <option>10</option><option>11</option><option>12</option><option>13</option><option>14</option>
+          <option>15</option><option>16</option><option>17</option><option>18</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="loc">Where you live</label>
+        <input id="loc" type="text" placeholder="Town or ZIP code" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="gender">Gender you identify as <span class="muted" style="font-weight:400">(optional)</span></label>
+        <select id="gender">
+          <option value="">Choose</option>
+          <option value="female">Female</option>
+          <option value="male">Male</option>
+          <option value="nonbinary">Non-binary</option>
+          <option value="na">Prefer not to say</option>
+        </select>
+      </div>
+    </div>
+
+    <fieldset>
+      <legend>Are you interested in sports?</legend>
+      <div class="row">
+        <button type="button" class="btn chip" data-sports="yes" aria-pressed="false">Yes</button>
+        <button type="button" class="btn chip" data-sports="no" aria-pressed="false">Not right now</button>
+      </div>
+      <div id="sport-pick" class="stack" style="gap:8px" hidden>
+        <span class="muted small">Which sports interest you? Pick any.</span>
+        <div class="row" id="sport-chips"></div>
+        <div class="field other-input" id="sport-other-field" hidden>
+          <label for="sport-other">Which other sport?</label>
+          <input id="sport-other" type="text" placeholder="For example, fencing or rock climbing">
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>How would you like to volunteer? <span class="muted" style="font-weight:400">(optional)</span></legend>
+      <div class="row" id="vol-chips"></div>
+      <div class="field other-input" id="vol-other-field" hidden>
+        <label for="vol-other">How else would you like to volunteer?</label>
+        <input id="vol-other" type="text" placeholder="For example, helping at a museum">
+      </div>
+    </fieldset>
+
+    <div class="survey-foot">
+      <span class="muted small">You can change these anytime.</span>
+      <button type="button" class="btn primary" id="survey-submit">Build my For you page</button>
+    </div>
+  </form>
+</section>
+</main>
+
+<script src="js/core.js"></script>
+<script src="js/api.js"></script>
+<script src="js/layout.js"></script>
+<script src="js/pages/survey.js"></script>
+</body>
+</html>

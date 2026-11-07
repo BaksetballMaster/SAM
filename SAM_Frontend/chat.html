@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SAM — Chat</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<header></header>
+
+<main>
+<section class="screen" id="chat" aria-label="Chat with SAM">
+  <div class="chat">
+    <div class="hello" id="hello">
+      <div class="logo" aria-hidden="true">S</div>
+      <h1>Hello there, how may I assist you today?</h1>
+      <p class="muted">SAM searches the web to help you understand, plan and find opportunities. It guides you through homework but won’t do it for you.</p>
+    </div>
+    <div class="messages" id="messages" aria-live="polite"></div>
+    <div class="composer">
+      <label for="chatbox" class="sr-only">Message SAM</label>
+      <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="margin-left:6px;flex-shrink:0;color:var(--muted)"><circle cx="11" cy="11" r="7"/><line x1="20" y1="20" x2="16.5" y2="16.5"/></svg>
+      <input id="chatbox" type="text" autocomplete="off">
+      <button class="send" type="button" id="send-btn" aria-label="Send message">
+        <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+      </button>
+    </div>
+    <div class="stack" style="gap:8px">
+      <span class="muted small">Try asking</span>
+      <div class="row" id="prompt-chips"></div>
+    </div>
+    <p class="muted small" style="text-align:center">Prototype: replies and sources are scripted to show the experience.</p>
+  </div>
+</section>
+</main>
+
+<script src="js/core.js"></script>
+<script src="js/api.js"></script>
+<script src="js/layout.js"></script>
+<script src="js/pages/chat.js"></script>
+</body>
+</html>
