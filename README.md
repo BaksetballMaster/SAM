@@ -1,2 +1,2 @@
-# SAM1
+# SAM
 Please noting reading meings
