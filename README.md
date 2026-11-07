@@ -1,2 +1,2 @@
 # SAM1
-SAm 
+Please noting reading meings
