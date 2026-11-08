@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SAM — {% block title %}{% endblock %}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+
+<header>
+  <div class="bar">
+    <div class="brand">
+      <div class="logo" aria-hidden="true">S</div>
+      <div>
+        <strong>SAM</strong>
+        <span class="muted small">Your learning, sports and volunteering guide</span>
+      </div>
+    </div>
+    {%- if user %}
+    <nav aria-label="Main">
+      {%- for page, label in nav %}
+      <a class="btn tab" href="{{ url_for(page) }}"{% if page == active %} aria-current="page"{% endif %}>{{ label }}</a>
+      {%- endfor %}
+      <a class="btn icon-btn" href="#add" aria-label="Add a resource" title="Add a resource">
+        <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </a>
+    </nav>
+    <div class="user-area">
+      <span class="small muted">{{ user.email }}</span>
+      <form class="inline" method="post" action="{{ url_for('signout') }}"><button class="btn">Sign out</button></form>
+    </div>
+    {%- endif %}
+  </div>
+</header>
+
+<main>
+{% block main %}{% endblock %}
+</main>
+
+{% if user and add %}
+<div class="overlay{% if add.error %} open{% endif %}" id="add">
+  <a class="overlay-close" href="#" aria-label="Close" tabindex="-1"></a>
+  <form class="dialog" role="dialog" aria-modal="true" aria-labelledby="add-title" method="post" action="{{ url_for('add_resource') }}" novalidate>
+    <input type="hidden" name="back" value="{{ request.path }}">
+    <div class="stack" style="gap:4px">
+      <h2 id="add-title">Add a resource</h2>
+      <p class="muted small">Share a website that helped you. It will show on the Resources page.</p>
+    </div>
+    <div class="field">
+      <label for="res-link">Link</label>
+      <input id="res-link" name="url" type="url" placeholder="https://www.example.com" autocomplete="off" value="{{ add.url }}">
+    </div>
+    <div class="field">
+      <label for="res-by">Posted by</label>
+      <input id="res-by" name="by" type="text" placeholder="Your name" value="{{ add.by }}">
+    </div>
+    <div class="field">
+      <label for="res-age">Age of the person posting</label>
+      <input id="res-age" name="age" type="number" min="10" max="120" inputmode="numeric" placeholder="For example, 14" value="{{ add.age }}">
+    </div>
+    <p class="error" role="alert">{{ add.error }}</p>
+    <div class="dialog-actions">
+      <a class="btn" href="#">Cancel</a>
+      <button class="btn primary">Add resource</button>
+    </div>
+  </form>
+</div>
+{% endif %}
+</body>
+</html>

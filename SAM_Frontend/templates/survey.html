@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Preferences{% endblock %}
+{% macro chips(name, options, picked) -%}
+{%- for x in options %}
+<label class="btn chip"><input class="sr-only" type="checkbox" name="{{ name }}" value="{{ x }}"{% if x in picked %} checked{% endif %}>{{ x }}</label>
+{%- endfor %}
+{%- endmacro %}
+{% block main %}
+<section class="screen" id="survey" aria-labelledby="survey-title">
+  <form class="panel" method="post" action="{{ url_for('survey') }}" novalidate>
+    <div class="stack" style="gap:6px">
+      <h1 id="survey-title">Tell SAM a little about you</h1>
+      <p class="muted">SAM uses this to build your For you page. Study resources are already included, so this is only about life outside class.</p>
+    </div>
+
+    <div class="fields">
+      <div class="field">
+        <label for="age">Age</label>
+        <select id="age" name="age">
+          <option value="">Choose</option>
+          {%- for a in ages %}
+          <option{% if a == prefs.age %} selected{% endif %}>{{ a }}</option>
+          {%- endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label for="loc">Where you live</label>
+        <input id="loc" name="loc" type="text" placeholder="Town or ZIP code" autocomplete="off" value="{{ prefs.loc }}">
+      </div>
+      <div class="field">
+        <label for="gender">Gender you identify as <span class="muted" style="font-weight:400">(optional)</span></label>
+        <select id="gender" name="gender">
+          <option value="">Choose</option>
+          {%- for value, label in [("female", "Female"), ("male", "Male"), ("nonbinary", "Non-binary"), ("na", "Prefer not to say")] %}
+          <option value="{{ value }}"{% if value == prefs.gender %} selected{% endif %}>{{ label }}</option>
+          {%- endfor %}
+        </select>
+      </div>
+    </div>
+
+    <fieldset id="sports-fs">
+      <legend>Are you interested in sports?</legend>
+      <div class="row">
+        <label class="btn chip"><input class="sr-only" type="radio" name="playsSports" value="yes"{% if prefs.playsSports == "yes" %} checked{% endif %}>Yes</label>
+        <label class="btn chip"><input class="sr-only" type="radio" name="playsSports" value="no"{% if prefs.playsSports == "no" %} checked{% endif %}>Not right now</label>
+      </div>
+      <div id="sport-pick" class="stack reveal" style="gap:8px">
+        <span class="muted small">Which sports interest you? Pick any.</span>
+        <div class="row">{{ chips("sports", sports, prefs.sports) }}</div>
+        <div class="field other-input reveal" id="sport-other-field">
+          <label for="sport-other">Which other sport?</label>
+          <input id="sport-other" name="sportOther" type="text" placeholder="For example, fencing or rock climbing" value="{{ prefs.sportOther }}">
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset id="vol-fs">
+      <legend>How would you like to volunteer? <span class="muted" style="font-weight:400">(optional)</span></legend>
+      <div class="row">{{ chips("vol", volunteer, prefs.vol) }}</div>
+      <div class="field other-input reveal" id="vol-other-field">
+        <label for="vol-other">How else would you like to volunteer?</label>
+        <input id="vol-other" name="volOther" type="text" placeholder="For example, helping at a museum" value="{{ prefs.volOther }}">
+      </div>
+    </fieldset>
+
+    <div class="survey-foot">
+      <span class="muted small">You can change these anytime.</span>
+      <button class="btn primary">Build my For you page</button>
+    </div>
+  </form>
+</section>
+{% endblock %}

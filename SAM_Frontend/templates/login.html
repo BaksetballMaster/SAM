@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% set signup = mode == "signup" %}
+{% block title %}Sign in{% endblock %}
+{% block main %}
+<section class="screen" id="login" aria-labelledby="login-title">
+  <div class="auth">
+    <div class="stack" style="align-items:center;text-align:center;gap:8px">
+      <div class="logo" aria-hidden="true">S</div>
+      <h1 id="login-title">{{ "Create your SAM account" if signup else "Welcome to SAM" }}</h1>
+      <p class="muted">{{ "It takes a minute. Then SAM asks a few questions to personalise your page." if signup else "Sign in to see your resources, sports and volunteering picks." }}</p>
+    </div>
+    <form method="post" action="{{ url_for('login_google') }}">
+      <button class="btn wide">
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 12h8"/></svg>
+        Continue with Google
+      </button>
+    </form>
+    <div class="divider">or use email</div>
+    <form method="post" action="{{ url_for('login') }}" class="stack" style="gap:14px" novalidate>
+      <input type="hidden" name="mode" value="{{ mode }}">
+      {%- if signup %}
+      <div class="field">
+        <label for="name">First name</label>
+        <input id="name" name="name" type="text" autocomplete="given-name" value="{{ form.name }}">
+      </div>
+      {%- endif %}
+      <div class="field">
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" autocomplete="email" placeholder="you@example.com" value="{{ form.email }}">
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" autocomplete="{{ 'new-password' if signup else 'current-password' }}" placeholder="At least 8 characters">
+      </div>
+      {%- if signup %}
+      <label class="small muted" style="display:flex;gap:8px;align-items:flex-start">
+        <input type="checkbox" name="consent" value="1" style="margin-top:4px;width:18px;height:18px"{% if form.consent %} checked{% endif %}>
+        <span>If I’m under 13, a parent or guardian has agreed to let me use SAM.</span>
+      </label>
+      {%- endif %}
+      <p class="error" role="alert">{{ error }}</p>
+      <button class="btn primary">{{ "Create account" if signup else "Sign in" }}</button>
+    </form>
+    <p class="small muted" style="text-align:center">
+      {{ "Already have an account?" if signup else "New to SAM?" }}
+      <a class="linkish" href="{{ url_for('login') if signup else url_for('login', mode='signup') }}">{{ "Sign in" if signup else "Create an account" }}</a>
+    </p>
+  </div>
+</section>
+{% endblock %}

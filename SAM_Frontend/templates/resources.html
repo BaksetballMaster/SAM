@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% from "_cards.html" import site_card %}
+{% block title %}Resources{% endblock %}
+{% block main %}
+<section class="screen" id="resources" aria-labelledby="res-title">
+  <div class="stack" style="gap:32px">
+    <div class="head">
+      <div class="stack" style="gap:4px">
+        <h1 id="res-title">Resources</h1>
+        <p class="muted">Links shared by students and mentors, plus SAM’s study resources.</p>
+      </div>
+      <a class="btn primary" href="#add">Add a resource</a>
+    </div>
+    <div class="stack">
+      <h2>Shared by the community</h2>
+      {%- if shared %}
+      <div class="grid">
+        {%- for r in shared %}
+        {%- set domain = r.url | domain %}
+        <article class="card">
+          <div class="thumb" data-domain="{{ domain }}"><img src="{{ r.url | shot }}" alt="Picture of {{ domain }}" loading="lazy"></div>
+          <div class="content">
+            <span class="tag">Shared</span>
+            <h3>{{ domain }}</h3>
+            <p>Shared by {{ r.postedBy }}, age {{ r.age }}, on {{ r.postedAt | date }}</p>
+            <a class="visit" href="{{ r.url }}" target="_blank" rel="noopener noreferrer">Visit {{ domain }}</a>
+          </div>
+        </article>
+        {%- endfor %}
+      </div>
+      {%- else %}
+      <div class="empty">
+        <p class="muted">No one has shared a link yet. Add the first one with the + button.</p>
+        <a class="btn" href="#add">Add a resource</a>
+      </div>
+      {%- endif %}
+    </div>
+    <div class="stack">
+      <h2>Study resources</h2>
+      <div class="grid">{% for s in study %}{{ site_card(s) }}{% endfor %}</div>
+    </div>
+  </div>
+</section>
+{% endblock %}

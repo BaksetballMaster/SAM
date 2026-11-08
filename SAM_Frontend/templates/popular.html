@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Popular near you{% endblock %}
+{% block main %}
+<section class="screen" id="popular" aria-labelledby="pop-title">
+  <div class="stack" style="gap:24px">
+    <div class="stack" style="gap:4px">
+      <h1 id="pop-title">Popular near {{ place }}</h1>
+      <p class="muted">What students around you are opening and saving most, filtered to your interests.</p>
+    </div>
+    <p class="note">Sample items. In the real app, this list is ranked from what students in your area search for and save.</p>
+    <div class="grid-3">
+      {%- for col in cols %}
+      <div class="list-card">
+        <h2 style="font-size:19px">{{ col.title }}</h2>
+        <ol class="rank-list">
+          {%- for title, sub in col["items"] %}
+          <li><span class="rank">{{ loop.index }}</span><div><strong>{{ title }}</strong><span class="small muted">{{ sub }}</span></div></li>
+          {%- endfor %}
+        </ol>
+      </div>
+      {%- endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}
