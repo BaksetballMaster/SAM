@@ -1,0 +1,3 @@
+{
+  "python.defaultInterpreterPath": "${workspaceFolder}/SAM_Frontend/.venv/bin/python"
+}

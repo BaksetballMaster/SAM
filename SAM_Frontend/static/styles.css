@@ -142,3 +142,23 @@ legend { font-weight: 600; margin-bottom: 10px; padding: 0; }
   .msg { animation: in .18s ease-out; }
   @keyframes in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 }
+
+/* ---------- No-JavaScript helpers (the pages are drawn by Python) ---------- */
+/* Chips are checkboxes/radios styled as buttons. */
+label.btn { display: inline-flex; align-items: center; }
+.chip:has(input:checked) { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.chip:has(input:focus-visible) { outline: 3px solid var(--accent); outline-offset: 2px; }
+/* Show the sports list only after "Yes", and the "Other" boxes only when Other is ticked. */
+.reveal { display: none; }
+#sports-fs:has(input[value="yes"]:checked) #sport-pick { display: flex; }
+#sport-pick:has(input[value="Other"]:checked) #sport-other-field,
+#vol-fs:has(input[value="Other"]:checked) #vol-other-field { display: flex; }
+form.inline { display: inline; }
+/* Website pictures: the domain name sits behind the picture, so it shows if the picture fails. */
+.thumb::before { content: attr(data-domain); position: absolute; inset: 0; display: grid; place-items: center; font: 600 15px var(--display); color: var(--muted); padding: 0 16px; text-align: center; }
+.thumb.noimg::before, .thumb.search::before { content: none; }
+.thumb img { position: relative; }
+/* Add-resource dialog: opened by the #add link, or by Python after an error. */
+.overlay:not(:target):not(.open) { display: none; }
+.overlay-close { position: absolute; inset: 0; }
+.dialog { position: relative; }

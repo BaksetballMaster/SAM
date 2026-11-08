@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% from "_cards.html" import site_card %}
+{% block title %}For you{% endblock %}
+{% block main %}
+<section class="screen" id="foryou" aria-labelledby="fy-title">
+  <div class="stack" style="gap:32px">
+    <div class="head">
+      <div class="stack" style="gap:4px">
+        <h1 id="fy-title">For you</h1>
+        <p class="muted">
+          {%- if prefs.loc.strip() %}Picked from your preferences and what’s around {{ prefs.loc.strip() }}. Start a chat anytime.
+          {%- else %}Picked from your preferences. Start a chat anytime.{% endif -%}
+        </p>
+      </div>
+      <a class="btn primary" href="{{ url_for('chat') }}">Start a new chat with SAM</a>
+    </div>
+
+    {%- if sport_sites %}
+    <div class="stack">
+      <h2>Sports websites for you</h2>
+      <div class="grid">{% for s in sport_sites %}{{ site_card(s) }}{% endfor %}</div>
+    </div>
+    {%- endif %}
+
+    {%- if vol_sites %}
+    <div class="stack">
+      <h2>Volunteering websites for you</h2>
+      <div class="grid">{% for s in vol_sites %}{{ site_card(s) }}{% endfor %}</div>
+    </div>
+    {%- endif %}
+
+    {%- if not sport_sites and not vol_sites %}
+    <div class="empty">
+      <p class="muted">Pick a sport or a way to volunteer and SAM will find websites for you.</p>
+      <a class="btn" href="{{ url_for('survey') }}">Edit preferences</a>
+    </div>
+    {%- endif %}
+
+    <div class="stack">
+      <h2>Study resources</h2>
+      <div class="grid">{% for s in study %}{{ site_card(s) }}{% endfor %}</div>
+    </div>
+  </div>
+</section>
+{% endblock %}

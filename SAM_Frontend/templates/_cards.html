@@ -1,0 +1,23 @@
+{# One website card with a picture of the site. #}
+{% macro site_card(s) -%}
+{%- set domain = s.url | domain if s.url else "Mentor" -%}
+<article class="card">
+  {%- if s.isSearch %}
+  <div class="thumb search" aria-hidden="true"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="20" y1="20" x2="16.5" y2="16.5"/></svg></div>
+  {%- elif s.url %}
+  <div class="thumb" data-domain="{{ domain }}"><img src="{{ s.url | shot }}" alt="Picture of the {{ s.title }} website" loading="lazy"></div>
+  {%- else %}
+  <div class="thumb noimg" data-domain="{{ s.title }}"></div>
+  {%- endif %}
+  <div class="content">
+    <span class="tag{% if s.kind == 'sport' %} sport{% elif s.kind == 'vol' %} vol{% endif %}">{{ s.topic }}</span>
+    <h3>{{ s.title }}</h3>
+    <p>{{ s.text }}</p>
+    {%- if s.url %}
+    <a class="visit" href="{{ s.url }}" target="_blank" rel="noopener noreferrer">{{ "Search the web" if s.isSearch else "Visit " ~ domain }}</a>
+    {%- else %}
+    <span class="small muted">Mentor session</span>
+    {%- endif %}
+  </div>
+</article>
+{%- endmacro %}
