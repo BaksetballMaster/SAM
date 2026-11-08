@@ -4,7 +4,7 @@ async function renderForYou() {
   $("#fy-sub").textContent = state.prefs.loc.trim()
     ? `Picked from your preferences and what’s around ${state.prefs.loc.trim()}. Start a chat anytime.`
     : "Picked from your preferences. Start a chat anytime.";
-  $("#study-cards").innerHTML = STUDY.map(siteCard).join("");
+  $("#study-cards").innerHTML = (await getStudyResources()).map(siteCard).join("");
   $("#fy-loading").hidden = false;
   const { sportSites, volSites } = await getForYou(state.prefs);
   $("#fy-loading").hidden = true;

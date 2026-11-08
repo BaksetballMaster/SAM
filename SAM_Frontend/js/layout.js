@@ -138,7 +138,8 @@ async function saveAdd() {
   if (!by) return (err.textContent = "Enter who is posting this link.");
   if (!Number.isInteger(age) || age < 10 || age > 120) return (err.textContent = "Enter the age of the person posting, as a number from 10 up.");
   $("#add-save").disabled = true;
-  await addSharedResource({ url, postedBy: by, age });
+  const res = await addSharedResource({ url, postedBy: by, age });
+  if (!res.ok) { $("#add-save").disabled = false; return (err.textContent = res.error); }
   go("resources.html");
 }
 

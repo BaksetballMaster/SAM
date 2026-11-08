@@ -15,26 +15,12 @@ const $ = (sel) => document.querySelector(sel);
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const place = () => state.prefs.loc.trim() || "you";
 const domainOf = (url) => { try { return new URL(url).hostname.replace(/^www\./, ""); } catch (e) { return url; } };
-const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 const go = (page) => (location.href = page);
 
 // Website picture: a screenshot from WordPress's free mShots service.
 // The first time a site is requested, mShots may show a "generating" image for a few seconds.
 // BACKEND: the real app should take or fetch these pictures on the server and cache them.
 const shotOf = (url) => `https://s0.wp.com/mshots/v1/${encodeURIComponent(url)}?w=600&h=400`;
-
-// Pretend database so the prototype remembers things between sign-ins.
-// It uses the browser's storage when allowed, otherwise memory for this visit.
-// BACKEND: the real app keeps this in the server's database, never in the browser.
-const fakeDB = (() => {
-  let mem = {};
-  try { mem = JSON.parse(localStorage.getItem("sam-fake-db") || "{}"); } catch (e) {}
-  const persist = () => { try { localStorage.setItem("sam-fake-db", JSON.stringify(mem)); } catch (e) {} };
-  return {
-    get: (key) => (mem[key] ? JSON.parse(JSON.stringify(mem[key])) : null),
-    set: (key, value) => { mem[key] = JSON.parse(JSON.stringify(value)); persist(); }
-  };
-})();
 
 // Carries the signed-in user and chat between pages for this browser tab.
 // BACKEND: the real app uses the login service's session cookie instead.

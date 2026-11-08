@@ -17,7 +17,7 @@ async function renderResources() {
         </div>
       </article>`;
   }).join("");
-  $("#res-study-cards").innerHTML = STUDY.map(siteCard).join("");
+  $("#res-study-cards").innerHTML = (await getStudyResources()).map(siteCard).join("");
 }
 
 startPage("resources").then((ok) => ok && renderResources());

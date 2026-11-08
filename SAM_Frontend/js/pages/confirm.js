@@ -13,15 +13,17 @@ $("#confirm-yes").addEventListener("click", async () => {
   const user = state.pendingUser;
   const res = await answerLoginConfirmation(user.email, true);
   if (res.ok && res.confirmed) finishLogin(user);
+  else if (!res.ok) $("#resend-msg").textContent = res.error;
 });
 $("#confirm-no").addEventListener("click", async () => {
-  await answerLoginConfirmation(state.pendingUser.email, false);
+  const res = await answerLoginConfirmation(state.pendingUser.email, false);
+  if (!res.ok) return ($("#resend-msg").textContent = res.error);
   setPendingUser(null);
   go("login.html?stopped=1");
 });
 $("#confirm-resend").addEventListener("click", async () => {
-  await sendLoginConfirmation(state.pendingUser.email);
-  $("#resend-msg").textContent = `Sent again to ${state.pendingUser.email}.`;
+  const res = await sendLoginConfirmation(state.pendingUser.email);
+  $("#resend-msg").textContent = res.ok ? `Sent again to ${state.pendingUser.email}.` : res.error;
 });
 $("#confirm-back").addEventListener("click", () => {
   setPendingUser(null);
