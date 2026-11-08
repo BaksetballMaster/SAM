@@ -1,0 +1,5 @@
+__pycache__/
+.venv/
+.secret_key
+sam_data.json
+sam_data.tmp
