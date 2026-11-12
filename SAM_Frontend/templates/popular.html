@@ -1,20 +1,36 @@
 {% extends "base.html" %}
 {% block title %}Popular near you{% endblock %}
 {% block main %}
-<section class="screen" id="popular" aria-labelledby="pop-title">
+<section aria-labelledby="pop-title">
   <div class="stack" style="gap:24px">
-    <div class="stack" style="gap:4px">
+    <div class="stack" style="gap:6px">
       <h1 id="pop-title">Popular near {{ place }}</h1>
-      <p class="muted">What students around you are opening and saving most, filtered to your interests.</p>
+      <p class="muted">What students around you opened and asked SAM about in the last 30 days. Things that match your interests come first.</p>
     </div>
-    <p class="note">Sample items. In the real app, this list is ranked from what students in your area search for and save.</p>
+    {%- if not has_activity %}
+    <p class="note">No activity near {{ place }} yet. These are suggestions until students near you start opening links from SAM.</p>
+    {%- endif %}
     <div class="grid-3">
       {%- for col in cols %}
       <div class="list-card">
         <h2 style="font-size:19px">{{ col.title }}</h2>
         <ol class="rank-list">
-          {%- for title, sub in col["items"] %}
-          <li><span class="rank">{{ loop.index }}</span><div><strong>{{ title }}</strong><span class="small muted">{{ sub }}</span></div></li>
+          {%- for item in col["items"] %}
+          <li>
+            <span class="rank{% if not item.real %} suggested{% endif %}">{{ loop.index }}</span>
+            <div>
+              {%- if item.url %}
+              <strong><a href="{{ {'url': item.url, 'title': item.title, 'kind': {'Education': 'study', 'Extracurriculars': 'sport', 'Volunteering': 'vol'}[col.title]} | go }}" target="_blank" rel="noopener">{{ item.title }}<span class="sr-only"> (opens in a new tab)</span></a></strong>
+              {%- else %}
+              <strong>{{ item.title }}</strong>
+              {%- endif %}
+              <span class="rank-meta">
+                <span class="small muted">{{ item.sub }}</span>
+                {%- if item.match %}<span class="tag">Matches you</span>{% endif %}
+                {%- if not item.real %}<span class="tag live">Suggested</span>{% endif %}
+              </span>
+            </div>
+          </li>
           {%- endfor %}
         </ol>
       </div>

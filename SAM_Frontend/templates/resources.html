@@ -2,14 +2,14 @@
 {% from "_cards.html" import site_card %}
 {% block title %}Resources{% endblock %}
 {% block main %}
-<section class="screen" id="resources" aria-labelledby="res-title">
+<section aria-labelledby="res-title">
   <div class="stack" style="gap:32px">
     <div class="head">
-      <div class="stack" style="gap:4px">
+      <div class="stack" style="gap:6px">
         <h1 id="res-title">Resources</h1>
         <p class="muted">Links shared by students and mentors, plus SAM’s study resources.</p>
       </div>
-      <a class="btn primary" href="#add">Add a resource</a>
+      <a class="btn primary" href="#add"><svg class="i" aria-hidden="true"><use href="#i-plus"/></svg>Add a resource</a>
     </div>
     <div class="stack">
       <h2>Shared by the community</h2>
@@ -23,7 +23,7 @@
             <span class="tag">Shared</span>
             <h3>{{ domain }}</h3>
             <p>Shared by {{ r.postedBy }}, age {{ r.age }}, on {{ r.postedAt | date }}</p>
-            <a class="visit" href="{{ r.url }}" target="_blank" rel="noopener noreferrer">Visit {{ domain }}</a>
+            <a class="visit" href="{{ {'url': r.url, 'title': domain, 'kind': 'shared', 'topic': 'Shared'} | go }}" target="_blank" rel="noopener">Visit {{ domain }}<span class="sr-only"> (opens in a new tab)</span></a>
           </div>
         </article>
         {%- endfor %}

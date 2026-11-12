@@ -1,71 +1,111 @@
 {% extends "base.html" %}
-{% block title %}Preferences{% endblock %}
+{% block title %}{{ "Tell SAM about you" if first_time else "Preferences" }}{% endblock %}
 {% macro chips(name, options, picked) -%}
 {%- for x in options %}
-<label class="btn chip"><input class="sr-only" type="checkbox" name="{{ name }}" value="{{ x }}"{% if x in picked %} checked{% endif %}>{{ x }}</label>
+<label class="btn chip"><input class="sr-only" type="checkbox" name="{{ name }}" value="{{ x }}"{% if x in picked %} checked{% endif %}><svg class="i" aria-hidden="true"><use href="#i-check"/></svg>{{ x }}</label>
 {%- endfor %}
 {%- endmacro %}
+{% macro problem(key) -%}
+{%- if errors[key] %}<p class="field-error" id="{{ key }}-error">{{ errors[key] }}</p>{% endif -%}
+{%- endmacro %}
+{% macro invalid(key) -%}
+{%- if errors[key] %} aria-invalid="true" aria-describedby="{{ key }}-error"{% endif -%}
+{%- endmacro %}
+{% set labels = {"age": "Age", "loc": "Where you live", "playsSports": "Sports", "sports": "Which sports", "sportOther": "Other sport", "volOther": "Other volunteering", "form": "Saving"} %}
+{% set targets = {"age": "age", "loc": "loc", "playsSports": "sports-fs", "sports": "sport-pick", "sportOther": "sport-other", "volOther": "vol-other"} %}
+
 {% block main %}
-<section class="screen" id="survey" aria-labelledby="survey-title">
+<section aria-labelledby="survey-title">
   <form class="panel" method="post" action="{{ url_for('survey') }}" novalidate>
-    <div class="stack" style="gap:6px">
-      <h1 id="survey-title">Tell SAM a little about you</h1>
-      <p class="muted">SAM uses this to build your For you page. Study resources are already included, so this is only about life outside class.</p>
+    <div class="stack" style="gap:14px">
+      {%- if first_time %}
+      <ol class="steps" aria-label="Getting started">
+        <li class="done"><span class="num"><svg class="i" style="width:14px;height:14px" aria-hidden="true"><use href="#i-check"/></svg></span>Account<span class="sr-only">, done</span></li>
+        <li class="now" aria-current="step"><span class="num">2</span>About you</li>
+        <li><span class="num">3</span>Your For you page</li>
+      </ol>
+      {%- endif %}
+      <h1 id="survey-title">{{ "Tell SAM a little about you" if first_time else "Your preferences" }}</h1>
+      <p class="muted">SAM uses this to build your For you page and to find things near you. Study resources are already included, so this is only about life outside class. It takes about a minute.</p>
     </div>
 
-    <div class="fields">
-      <div class="field">
-        <label for="age">Age</label>
-        <select id="age" name="age">
-          <option value="">Choose</option>
-          {%- for a in ages %}
-          <option{% if a == prefs.age %} selected{% endif %}>{{ a }}</option>
-          {%- endfor %}
-        </select>
-      </div>
-      <div class="field">
-        <label for="loc">Where you live</label>
-        <input id="loc" name="loc" type="text" placeholder="Town or ZIP code" autocomplete="off" value="{{ prefs.loc }}">
-      </div>
-      <div class="field">
-        <label for="gender">Gender you identify as <span class="muted" style="font-weight:400">(optional)</span></label>
-        <select id="gender" name="gender">
-          <option value="">Choose</option>
-          {%- for value, label in [("female", "Female"), ("male", "Male"), ("nonbinary", "Non-binary"), ("na", "Prefer not to say")] %}
-          <option value="{{ value }}"{% if value == prefs.gender %} selected{% endif %}>{{ label }}</option>
-          {%- endfor %}
-        </select>
+    {%- if errors %}
+    <div class="alert error-summary" role="alert" tabindex="-1" id="error-summary">
+      <span>Check {{ "this answer" if errors|length == 1 else "these " ~ errors|length ~ " answers" }}:</span>
+      <ul>
+        {%- for key, message in errors.items() %}
+        <li>{% if targets.get(key) %}<a href="#{{ targets[key] }}">{{ labels.get(key, key) }}: {{ message }}</a>{% else %}{{ message }}{% endif %}</li>
+        {%- endfor %}
+      </ul>
+    </div>
+    {%- endif %}
+
+    <div class="q-section">
+      <div class="q-legend"><span class="q-num" aria-hidden="true">1</span><h2>About you</h2></div>
+      <p class="muted small q-sub">So SAM shows things that fit your age and area.</p>
+      <div class="fields">
+        <div class="field">
+          <label for="age">Age</label>
+          <select id="age" name="age"{{ invalid("age") }}>
+            <option value="">Choose</option>
+            {%- for a in ages %}
+            <option{% if a == prefs.age %} selected{% endif %}>{{ a }}</option>
+            {%- endfor %}
+          </select>
+          {{ problem("age") }}
+        </div>
+        <div class="field">
+          <label for="loc">Where you live</label>
+          <input id="loc" name="loc" type="text" placeholder="Town or ZIP code" autocomplete="postal-code" value="{{ prefs.loc }}"{{ invalid("loc") }}>
+          {{ problem("loc") }}
+        </div>
+        <div class="field">
+          <label for="gender">Gender you identify as <span class="optional">(optional)</span></label>
+          <select id="gender" name="gender" aria-describedby="gender-hint">
+            <option value="">Choose</option>
+            {%- for value, label in genders %}
+            <option value="{{ value }}"{% if value == prefs.gender %} selected{% endif %}>{{ label }}</option>
+            {%- endfor %}
+          </select>
+          <p class="hint" id="gender-hint">Helps find girls, boys or co-ed sports clinics.</p>
+        </div>
       </div>
     </div>
 
-    <fieldset id="sports-fs">
-      <legend>Are you interested in sports?</legend>
+    <fieldset class="q-section" id="sports-fs"{% if errors.playsSports %} aria-describedby="playsSports-error"{% endif %}>
+      <legend class="q-legend"><span class="q-num" aria-hidden="true">2</span><h2>Are you interested in sports?</h2></legend>
+      <p class="muted small q-sub">SAM looks for clinics, leagues and teams near you.</p>
       <div class="row">
-        <label class="btn chip"><input class="sr-only" type="radio" name="playsSports" value="yes"{% if prefs.playsSports == "yes" %} checked{% endif %}>Yes</label>
-        <label class="btn chip"><input class="sr-only" type="radio" name="playsSports" value="no"{% if prefs.playsSports == "no" %} checked{% endif %}>Not right now</label>
+        <label class="btn chip"><input class="sr-only" type="radio" name="playsSports" value="yes"{% if prefs.playsSports == "yes" %} checked{% endif %}><svg class="i" aria-hidden="true"><use href="#i-check"/></svg>Yes</label>
+        <label class="btn chip"><input class="sr-only" type="radio" name="playsSports" value="no"{% if prefs.playsSports == "no" %} checked{% endif %}><svg class="i" aria-hidden="true"><use href="#i-check"/></svg>Not right now</label>
       </div>
-      <div id="sport-pick" class="stack reveal" style="gap:8px">
-        <span class="muted small">Which sports interest you? Pick any.</span>
+      {{ problem("playsSports") }}
+      <div id="sport-pick" class="stack reveal" style="gap:10px">
+        <span class="label">Which sports interest you? Pick any.</span>
         <div class="row">{{ chips("sports", sports, prefs.sports) }}</div>
+        {{ problem("sports") }}
         <div class="field other-input reveal" id="sport-other-field">
           <label for="sport-other">Which other sport?</label>
-          <input id="sport-other" name="sportOther" type="text" placeholder="For example, fencing or rock climbing" value="{{ prefs.sportOther }}">
+          <input id="sport-other" name="sportOther" type="text" placeholder="For example, fencing or rock climbing" value="{{ prefs.sportOther }}"{{ invalid("sportOther") }}>
+          {{ problem("sportOther") }}
         </div>
       </div>
     </fieldset>
 
-    <fieldset id="vol-fs">
-      <legend>How would you like to volunteer? <span class="muted" style="font-weight:400">(optional)</span></legend>
+    <fieldset class="q-section" id="vol-fs">
+      <legend class="q-legend"><span class="q-num" aria-hidden="true">3</span><h2>How would you like to volunteer? <span class="optional">(optional)</span></h2></legend>
+      <p class="muted small q-sub">Pick any. SAM finds openings for students your age.</p>
       <div class="row">{{ chips("vol", volunteer, prefs.vol) }}</div>
       <div class="field other-input reveal" id="vol-other-field">
         <label for="vol-other">How else would you like to volunteer?</label>
-        <input id="vol-other" name="volOther" type="text" placeholder="For example, helping at a museum" value="{{ prefs.volOther }}">
+        <input id="vol-other" name="volOther" type="text" placeholder="For example, helping at a museum" value="{{ prefs.volOther }}"{{ invalid("volOther") }}>
+        {{ problem("volOther") }}
       </div>
     </fieldset>
 
     <div class="survey-foot">
-      <span class="muted small">You can change these anytime.</span>
-      <button class="btn primary">Build my For you page</button>
+      <span class="muted small">Saved to your account. You can change these anytime in Preferences.</span>
+      <button class="btn primary" data-busy-text="Saving…"><span class="label">{{ "Build my For you page" if first_time else "Save preferences" }}</span></button>
     </div>
   </form>
 </section>

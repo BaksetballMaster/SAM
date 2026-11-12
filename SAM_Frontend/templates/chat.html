@@ -1,31 +1,52 @@
 {% extends "base.html" %}
 {% block title %}Chat{% endblock %}
 {% block main %}
-<section class="screen" id="chat" aria-label="Chat with SAM">
-  <form class="chat" method="post" action="{{ url_for('chat') }}">
-    {%- if not messages %}
-    <div class="hello">
-      <div class="logo" aria-hidden="true">S</div>
-      <h1>Hello there, how may I assist you today?</h1>
-      <p class="muted">SAM searches the web to help you understand, plan and find opportunities. It guides you through homework but won’t do it for you.</p>
-    </div>
-    {%- endif %}
+<section class="chat" aria-label="Chat with SAM">
+  {%- if messages %}
+  <div class="chat-top">
+    <h1 class="sr-only">Chat with SAM</h1>
+    <span class="muted small">{{ "SAM searches the web and answers with NVIDIA Nemotron." if live else "Demo replies: SAM’s AI isn’t connected yet." }}</span>
+    {# Its own form, so pressing Enter in the message box can't start a new chat. #}
+    <form method="post" action="{{ url_for('chat') }}">
+      <button class="btn" name="action" value="new"><svg class="i" aria-hidden="true"><use href="#i-plus"/></svg>New chat</button>
+    </form>
+  </div>
+  {%- else %}
+  <div class="hello">
+    <span class="logo" aria-hidden="true"><svg class="i"><use href="#i-compass"/></svg></span>
+    <h1>Hello there, how may I assist you today?</h1>
+    <p class="muted">SAM searches the web to help you understand, plan and find opportunities. It guides you through homework but won’t do it for you.</p>
+  </div>
+  {%- endif %}
+
+  <form class="chat-form" method="post" action="{{ url_for('chat') }}">
     <div class="messages" aria-live="polite">
       {%- for m in messages %}
-      <div class="msg {{ m.role }}">
-        <div class="bubble">{{ m.text }}
-          {%- if m.sources %}<div class="sources"><span>Searched:</span>{% for s in m.sources %}<span class="tag">{{ s }}</span>{% endfor %}</div>{% endif -%}
+      <div class="msg {{ m.role }}{% if m.error %} error{% endif %}">
+        {%- if m.role == "sam" %}<span class="avatar" aria-hidden="true"><svg class="i"><use href="#i-compass"/></svg></span>{% endif %}
+        <div class="bubble"><span class="sr-only">{{ "SAM said:" if m.role == "sam" else "You said:" }} </span>{{ m.text }}
+          {%- if m.sources %}
+          <div class="sources">
+            <span class="sources-title">{{ "Sources" if m.sources[0].n else "Searched" }}</span>
+            <ol>
+              {%- for s in m.sources %}
+              <li>{% if s.n %}<span class="n">[{{ s.n }}]</span>{% endif %}
+                {%- if s.url %}<span><a href="{{ s.url }}" target="_blank" rel="noopener noreferrer">{{ s.title }}<span class="sr-only"> (opens in a new tab)</span></a> <span class="src-domain">{{ s.url | domain }}</span></span>
+                {%- else %}<span>{{ s.title }}</span>{% endif %}</li>
+              {%- endfor %}
+            </ol>
+          </div>
+          {%- endif -%}
         </div>
       </div>
       {%- endfor %}
     </div>
+
     <div class="composer" id="latest">
       <label for="chatbox" class="sr-only">Message SAM</label>
-      <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="margin-left:6px;flex-shrink:0;color:var(--muted)"><circle cx="11" cy="11" r="7"/><line x1="20" y1="20" x2="16.5" y2="16.5"/></svg>
-      <input id="chatbox" name="message" type="text" autocomplete="off" placeholder="{{ placeholder }}" autofocus>
-      <button class="send" aria-label="Send message">
-        <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
-      </button>
+      <svg class="i" aria-hidden="true" style="margin-left:8px;color:var(--muted)"><use href="#i-search"/></svg>
+      <input id="chatbox" name="message" type="text" autocomplete="off" maxlength="4000" placeholder="{{ placeholder }}" autofocus>
+      <button class="send" aria-label="Send message"><svg class="i" aria-hidden="true"><use href="#i-send"/></svg></button>
     </div>
     <div class="stack" style="gap:8px">
       <span class="muted small">Try asking</span>
@@ -35,7 +56,9 @@
         {%- endfor %}
       </div>
     </div>
-    <p class="muted small" style="text-align:center">Prototype: replies and sources are scripted to show the experience.</p>
+    {%- if not live %}
+    <p class="muted small" style="text-align:center">Demo mode: replies are scripted until NVIDIA_API_KEY is set (see README).</p>
+    {%- endif %}
   </form>
 </section>
 {% endblock %}

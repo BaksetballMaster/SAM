@@ -1,2 +1,6 @@
 __pycache__/
 .venv/
+# Student accounts, survey answers and the session key: never commit these.
+data/
+# API keys
+.env

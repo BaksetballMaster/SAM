@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}{{ label }} sign-in (demo){% endblock %}
+{% block main %}
+<section aria-labelledby="demo-title">
+  <form class="auth narrow" method="post" action="{{ url_for('demo_sign_in', provider=provider) }}" novalidate>
+    <span class="demo-badge">Demo</span>
+    <div class="auth-head">
+      <h1 id="demo-title">Continue with {{ label }}</h1>
+      <p class="muted">{{ label }} sign-in isn’t connected to SAM yet, so this demo stands in for it. Type a name and email to make a demo {{ label }} account.</p>
+    </div>
+    <p class="note">Demo accounts have no password: anyone who types the same email gets the same account. To connect real {{ label }} sign-in, follow “Set up Google and Apple sign-in” in the README.</p>
+
+    <div class="field">
+      <label for="name">First name</label>
+      <input id="name" name="name" type="text" autocomplete="given-name" value="{{ form.name }}"{% if field == "name" %} aria-invalid="true" aria-describedby="name-error"{% endif %}>
+      {%- if field == "name" %}<p class="field-error" id="name-error">{{ error }}</p>{% endif %}
+    </div>
+    <div class="field">
+      <label for="email">Email</label>
+      <input id="email" name="email" type="email" inputmode="email" autocomplete="email" autocapitalize="none" spellcheck="false" placeholder="you@example.com" value="{{ form.email }}"{% if field == "email" %} aria-invalid="true" aria-describedby="email-error"{% endif %}>
+      {%- if field == "email" %}<p class="field-error" id="email-error">{{ error }}</p>{% endif %}
+    </div>
+
+    <button class="btn primary" data-busy-text="Signing in…"><span class="label">Continue (demo)</span></button>
+    <p class="fine-print"><a href="{{ url_for('login') }}">Back to sign in</a></p>
+  </form>
+</section>
+{% endblock %}
