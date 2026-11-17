@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% from "_finder.html" import map_assets, map_box %}
+{% block title %}My plan{% endblock %}
+{% block head %}{{ map_assets() }}{% endblock %}
+{% block main %}
+<section class="page" aria-labelledby="plan-title">
+  <div class="page-head with-action">
+    <div>
+      <h1 id="plan-title">My plan</h1>
+      <p class="muted">Places you saved from the Volunteer finder and the Sports tracker. Pick a day for each, then add them to your calendar.</p>
+    </div>
+    {%- if items %}
+    <a class="btn" href="{{ url_for('plan_calendar') }}" download><svg class="i" aria-hidden="true"><use href="#i-download"/></svg>Add to my calendar</a>
+    {%- endif %}
+  </div>
+
+  {%- if message %}<p class="note" role="status">{{ message }}</p>{% endif %}
+
+  {%- if not items %}
+  <div class="empty">
+    <p>Nothing saved yet. Save places from the <a href="{{ url_for('volunteer_page') }}">Volunteer finder</a>, or mark places you’re interested in on the <a href="{{ url_for('sports_page') }}">Sports tracker</a>.</p>
+  </div>
+  {%- else %}
+  <div class="split plan-split">
+    <div class="split-list">
+      {%- for heading, group in groups %}
+      <h2 class="section-title">{{ heading }}</h2>
+      <ol class="plan-list">
+        {%- for item in group %}
+        <li class="plan-item" data-place="{{ item.item_id }}">
+          <div class="plan-when">
+            <strong>{{ item.date | pretty_day }}</strong>
+            {%- if item.time %}<span class="small muted">{{ item.time | pretty_time }}</span>{% endif %}
+          </div>
+          <div class="plan-what">
+            <span class="tag {{ item.kind }}">{{ item.detail or ("Volunteering" if item.kind == "vol" else "Sports") }}</span>
+            <h3>{% if item.url %}<a href="{{ item.url }}" target="_blank" rel="noopener">{{ item.title }}<span class="sr-only"> (opens in a new tab)</span></a>{% else %}{{ item.title }}{% endif %}</h3>
+            {%- if item.address %}<p class="small muted">{{ item.address }}</p>{% endif %}
+            <form class="plan-edit" method="post" action="{{ url_for('plan_update') }}">
+              <input type="hidden" name="item_id" value="{{ item.item_id }}">
+              <label><span class="sr-only">Day for {{ item.title }}</span><input type="date" name="date" value="{{ item.date.isoformat() if item.date else '' }}"></label>
+              <label><span class="sr-only">Time for {{ item.title }}</span><input type="time" name="time" value="{{ item.time }}"></label>
+              <button class="btn" name="action" value="save">Save day</button>
+              <button class="btn ghost" name="action" value="remove" aria-label="Remove {{ item.title }} from my plan"><svg class="i" aria-hidden="true"><use href="#i-x"/></svg>Remove</button>
+            </form>
+          </div>
+        </li>
+        {%- endfor %}
+      </ol>
+      {%- endfor %}
+    </div>
+    <div class="split-map">
+      {{ map_box(here, 0, items, items | map(attribute="item_id") | list, "Map of the places in your plan", tall=True) }}
+    </div>
+  </div>
+  {%- endif %}
+</section>
+{% endblock %}

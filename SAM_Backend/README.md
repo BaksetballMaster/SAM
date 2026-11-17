@@ -6,7 +6,9 @@ SAM's data, sign-in and AI now run inside the Flask app in `SAM_Frontend`:
 |---|---|
 | [`database.py`](../SAM_Frontend/database.py) | The database: an Excel workbook (`SAM_Frontend/data/sam_database.xlsx`), as the team plan says "for now" |
 | [`sign_in_providers.py`](../SAM_Frontend/sign_in_providers.py) | Continue with Google / Apple (OpenID Connect) |
-| [`sam_ai.py`](../SAM_Frontend/sam_ai.py) | Chat with NVIDIA Nemotron, plus web search (Tavily or Brave) |
+| [`sam_ai.py`](../SAM_Frontend/sam_ai.py) | The NVIDIA Nemotron model, plus web search (Tavily or Brave) |
+| [`assistants/`](../SAM_Frontend/assistants) | The Volunteer finder, Sports tracker, Concept helper (with its guardrails) and Code translator |
+| [`services/`](../SAM_Frontend/services) | Maps, places, Wikipedia, the cache, and safe rich text |
 | [`api.py`](../SAM_Frontend/api.py) | The only file the pages call. Each function is marked with the endpoint below it stands for. |
 
 This file lists those calls as an HTTP API, so the backend can move into its own server later: build the endpoint, replace the matching `api.py` function's body with a request to it, and keep the same return value.
@@ -41,6 +43,23 @@ Google and Apple accounts are matched by the ID Google or Apple gives them, neve
 | `GET /api/resources` | | `get_shared_resources` | Newest first. Each: `{ url, postedBy, age, postedAt }` |
 | `POST /api/resources` | `{ url, postedBy, age }` | `add_shared_resource` | Still to do: check the link is safe and hold new posts for review before they appear |
 | `POST /api/chat` | `{ message, history }` | `ask_sam` | Searches the web, adds SAM's rules and the student's survey answers, and asks Nemotron. Returns `{ text, sources: [{ n, title, url }] }`. |
+
+## The four assistants and My plan
+
+| Endpoint | Body / query | `api.py` function | Notes |
+|---|---|---|---|
+| `POST /api/home` | `{ loc, radius }` | `set_home` | Finds the town or ZIP code on the map (`services/geo.py`: Nominatim, with Open-Meteo as a backup) and saves the point |
+| `GET /api/volunteer` | `?lat&lon&radius&category&day&slot&open` | `find_volunteering` | Real places from OpenStreetMap (`assistants/volunteer.py`). Each: distance, address, hours, open-then status, typical time commitment, sign-up link |
+| `GET /api/sports` | `?lat&lon&radius&sports&group&day&slot&open` | `find_sports` | Places to play for each sport (`assistants/sports.py`), plus clinic listings from web search |
+| `GET /api/saved` | | `saved_items` | My plan, the soonest day first |
+| `POST /api/saved/toggle` | `{ item, day, slot }` | `toggle_saved` | `item` is signed by the server when the page is drawn, so students can only save real results |
+| `POST /api/saved/<item_id>` | `{ date, time }` | `plan_item` | |
+| `DELETE /api/saved/<item_id>` | | `remove_saved` | |
+| `GET /plan.ics` | | `plan_calendar` | My plan as an iCalendar file |
+| `POST /api/chat` | `{ message, history }` | `ask_sam` | Now runs `assistants/concepts.py`: guardrail check, sources, the model, then a second guardrail check. Returns `{ text, main, deep_dives, sources, guard, mode, error }` |
+| `POST /api/code/explain` | `{ code, language, mirror }` | `explain_code` | `assistants/code_translator.py`. Built-in explainer, or Nemotron when connected. Never runs the code |
+| `POST /api/languages` | `{ name, words }` | `save_language` | A student's made-up language: their own words for up to 15 Python keywords. Up to 5 per student |
+| `DELETE /api/languages/<name>` | | `delete_language` | |
 
 ## Rules
 

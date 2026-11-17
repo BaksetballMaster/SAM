@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block title %}Code translator{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/codemirror.min.css" integrity="sha512-uf06llspW44/LZpHzHT6qBOIVODjWtv4MxCricRxkzvopAlSWnTf6hpZTFxuuZcuNE9CBQhqE0Seu1CoRk84nQ==" crossorigin="anonymous" referrerpolicy="no-referrer">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/codemirror.min.js" integrity="sha512-6cPYokihlrofMNApz7OXVQNObWjLiKGIBBb7+UB+AuMiRCLKmFKgrwms21sHq3bdFFZWpfHYRJBJvMFMPj1S9g==" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/mode/python/python.min.js" integrity="sha512-Vs2GKxnxnTQBRW7o2xXZ9A28njjmu5RToS42efiKNEWmikov0inZY522EtGVK5CcVo0M/FQwmXsTfl9skgRnvw==" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/mode/javascript/javascript.min.js" integrity="sha512-Cbz+kvn+l5pi5HfXsEB/FYgZVKjGIhOgYNBwj4W2IHP2y8r3AdyDCQRnEUqIQ+6aJjygKPTyaNT2eIihaykJlw==" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/mode/clike/clike.min.js" integrity="sha512-jcF10R6LSoLddMx32eEitiBfJ8icHBobh0Z7fwVewrKmNBBGM0B09oG3yxxnkIYwilUsXBbIcRN5jfmc6vSt9g==" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/mode/xml/xml.min.js" integrity="sha512-LarNmzVokUmcA7aUDtqZ6oTS+YXmUKzpGdm8DxC46A6AHu+PQiYCUlwEGWidjVYMo/QXZMFMIadZtrkfApYp/g==" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/mode/css/css.min.js" integrity="sha512-rQImvJlBa8MV1Tl1SXR5zD2bWfmgCEIzTieFegGg89AAt7j/NBEe50M5CqYQJnRwtkjKMmuYgHBqtD1Ubbk5ww==" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/mode/htmlmixed/htmlmixed.min.js" integrity="sha512-HN6cn6mIWeFJFwRN9yetDAMSh+AK9myHF1X9GlSlKmThaat65342Yw8wL7ITuaJnPioG0SYG09gy0qd5+s777w==" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/mode/sql/sql.min.js" integrity="sha512-TZji/E4or1ciET62zt9IgnfFJPkMqV4EhZ8AfiRVZeq+yxCT5O+PomM7nkfttOwX/ckDwjPzevAUhKvXnHl7MA==" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/mode/ruby/ruby.min.js" integrity="sha512-kIWQdD2Oq6DBWghYgnP6MpRMCuPxBvSI8/UBo7yxVm1blEPnNxVkwypVXky2KmIUgN2oNN7yd5TCeXJ48e867A==" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/mode/go/go.min.js" integrity="sha512-5YKxIhAQM4lMOsLVv3DVxchtVpZLdu678uinpE4s6l9+Y4GnZk0s3793HQvm9LGVcGsrIu3dVCtTNWdTD10DtQ==" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/mode/rust/rust.min.js" integrity="sha512-g3Nhw36S0p4ZJQcky87D5M+vZbFvLrgsHWYltUy5IW0zKbvi8GlPRjJSo2CyUyQiU01Ier7u+rBABDs3BawKyQ==" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/mode/swift/swift.min.js" integrity="sha512-HIdyPJdLGSemJqWgQyGnznVzLSHhXkIacwh/ituk0FLaxHYbiYf5Gz5WcGp8WcOQNNDlHUeFvBmy9e1nKw0Xqw==" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/mode/php/php.min.js" integrity="sha512-jZGz5n9AVTuQGhKTL0QzOm6bxxIQjaSbins+vD3OIdI7mtnmYE6h/L+UBGIp/SssLggbkxRzp9XkQNA4AyjFBw==" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.18/mode/shell/shell.min.js" integrity="sha512-HoC6JXgjHHevWAYqww37Gfu2c1G7SxAOv42wOakjR8csbTUfTB7OhVzSJ95LL62nII0RCyImp+7nR9zGmJ1wRQ==" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
+<script src="{{ url_for('static', filename='js/code.js') }}" defer></script>
+{% endblock %}
+{% block main %}
+<section class="page" aria-labelledby="code-title">
+  <div class="page-head">
+    <h1 id="code-title">Code translator</h1>
+    <p class="muted">Like a translator, but for code. Paste some code, pick its language, and see what each line does in plain English, or as pseudocode. SAM only reads your code; it never runs it.</p>
+  </div>
+
+  <div class="code-panes">
+    <form class="pane editor-pane" method="post" action="{{ url_for('code') }}" data-code-form>
+      <div class="pane-bar">
+        <div class="field lang-field">
+          <label for="language">Language</label>
+          <select id="language" name="language" data-combobox>
+            <optgroup label="Programming languages">
+              {%- for lang in languages if not lang.custom %}
+              <option value="{{ lang.id }}" data-mode="{{ lang.mode }}"{% if lang.id == language_id %} selected{% endif %}>{{ lang.name }}</option>
+              {%- endfor %}
+            </optgroup>
+            {%- if custom %}
+            <optgroup label="Your languages">
+              {%- for lang in languages if lang.custom %}
+              <option value="{{ lang.id }}" data-mode="python"{% if lang.id == language_id %} selected{% endif %}>{{ lang.name }}</option>
+              {%- endfor %}
+            </optgroup>
+            {%- endif %}
+          </select>
+        </div>
+        {%- if custom %}
+        <div class="field mirror-field" data-mirror-field>
+          <label for="mirror">Also show Python in</label>
+          <select id="mirror" name="mirror">
+            <option value="">Don’t</option>
+            {%- for lang in custom %}<option value="{{ lang.name }}"{% if lang.name == mirror %} selected{% endif %}>{{ lang.name }}</option>{% endfor %}
+          </select>
+        </div>
+        {%- endif %}
+      </div>
+      <label for="code-input" class="sr-only">Your code</label>
+      <textarea id="code-input" name="code" class="code-input" spellcheck="false" autocapitalize="off" autocomplete="off" rows="16" data-editor>{{ code }}</textarea>
+      <div class="pane-foot">
+        <span class="small muted">Up to 150 lines.</span>
+        <div class="row">
+          <button type="button" class="btn ghost" data-example hidden>Load an example</button>
+          <button class="btn primary" data-busy-text="Reading your code…"><svg class="i" aria-hidden="true"><use href="#i-wand"/></svg><span class="label">Explain my code</span></button>
+        </div>
+      </div>
+      <script type="application/json" data-examples>{{ examples | tojson }}</script>
+    </form>
+
+    <div class="pane output-pane" aria-live="polite" data-output>
+      {%- if problem %}<p class="alert" role="alert">{{ problem }}</p>{% endif %}
+      {%- if result %}
+      {% include "_code_result.html" %}
+      {%- elif not problem %}
+      <div class="output-empty">
+        <svg class="i" aria-hidden="true"><use href="#i-code"/></svg>
+        <p>Press <strong>Explain my code</strong> and each line’s meaning appears here, lined up with your code.</p>
+      </div>
+      {%- endif %}
+    </div>
+  </div>
+
+  <section class="make-lang" aria-labelledby="make-title">
+    <label class="switch">
+      <input type="checkbox" class="make-toggle" role="switch"{% if make_open %} checked{% endif %}>
+      <span class="switch-track" aria-hidden="true"></span>
+      <span id="make-title">Make your own language</span>
+    </label>
+    <div class="make-body">
+      <p class="muted small">Invent a language by giving Python’s keywords your own words. Then write code with your words, and SAM will explain it and show the same code in Python. Rename at least three.</p>
+      {%- if custom %}
+      <ul class="lang-list">
+        {%- for lang in custom %}
+        <li>
+          <strong>{{ lang.name }}</strong>
+          <span class="small muted">{% for key, word in lang.words.items() %}{{ word }} = {{ key }}{{ ", " if not loop.last }}{% endfor %}</span>
+          <a class="btn ghost" href="{{ url_for('code', language='custom:' ~ lang.name) }}">Write in {{ lang.name }}</a>
+          <form method="post" action="{{ url_for('code_language_save') }}" class="inline">
+            <input type="hidden" name="name" value="{{ lang.name }}">
+            <button class="btn ghost" name="action" value="delete" aria-label="Delete {{ lang.name }}"><svg class="i" aria-hidden="true"><use href="#i-x"/></svg>Delete</button>
+          </form>
+        </li>
+        {%- endfor %}
+      </ul>
+      {%- endif %}
+      <form method="post" action="{{ url_for('code_language_save') }}" class="make-form">
+        <div class="field">
+          <label for="lang-name">Your language’s name</label>
+          <input id="lang-name" name="name" type="text" maxlength="24" placeholder="For example, PirateScript" value="{{ draft.name or '' }}">
+        </div>
+        <div class="keyword-grid">
+          {%- for key, meaning in keywords %}
+          <div class="field">
+            <label for="word-{{ key }}"><code>{{ key }}</code> <span class="small muted">{{ meaning }}</span></label>
+            <input id="word-{{ key }}" name="word_{{ key }}" type="text" maxlength="20" autocapitalize="off" spellcheck="false" placeholder="{{ key }}" value="{{ (draft.words or {}).get(key, '') }}">
+          </div>
+          {%- endfor %}
+        </div>
+        <button class="btn primary">Save my language</button>
+      </form>
+    </div>
+  </section>
+</section>
+{% endblock %}

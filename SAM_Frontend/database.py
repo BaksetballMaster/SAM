@@ -7,6 +7,8 @@ password and For you info. This is that sheet: data/sam_database.xlsx
     Activity   Which websites students open and what subjects they ask SAM about.
                Used to rank the Popular near you page.
     Resources  Links students share on the Resources page
+    Saved      Places each student saved to My plan, with the day they plan to go
+    Languages  Made-up programming languages students create in the Code translator
 
 Passwords are never saved. The "Password (hashed)" column holds a one-way
 PBKDF2 hash, so nobody who opens the file can read a student's password.
@@ -31,7 +33,7 @@ from openpyxl.styles import Font, PatternFill
 
 DATA_DIR = Path(os.environ.get("SAM_DATA_DIR") or Path(__file__).resolve().parent / "data")
 DB_PATH = DATA_DIR / "sam_database.xlsx"
-MAX_TEXT = 500  # Longest text SAM stores in one cell
+MAX_TEXT = 2000  # Longest text SAM stores in one cell
 
 # Each sheet's columns: (key used in code, header shown in Excel, column width)
 SHEETS = {
@@ -54,6 +56,10 @@ SHEETS = {
         ("vol", "Volunteering", 34),
         ("vol_other", "Other volunteering", 18),
         ("survey_saved", "Survey saved", 17),
+        ("radius", "Travel distance (miles)", 12),
+        ("lat", "Latitude", 11),
+        ("lon", "Longitude", 11),
+        ("place", "Place on the map", 22),
     ],
     "Activity": [
         ("time", "Time", 17),
@@ -70,6 +76,26 @@ SHEETS = {
         ("posted_by", "Posted by", 16),
         ("age", "Age", 6),
         ("user_id", "User ID", 10),
+    ],
+    "Saved": [
+        ("saved", "Saved", 17),
+        ("user_id", "User ID", 10),
+        ("kind", "Kind", 8),
+        ("item_id", "Item ID", 20),
+        ("title", "Title", 32),
+        ("detail", "Detail", 24),
+        ("address", "Address", 34),
+        ("url", "Link", 44),
+        ("lat", "Latitude", 11),
+        ("lon", "Longitude", 11),
+        ("date", "Planned day", 13),
+        ("time", "Planned time", 12),
+    ],
+    "Languages": [
+        ("saved", "Saved", 17),
+        ("user_id", "User ID", 10),
+        ("name", "Language", 18),
+        ("spec", "Keywords (JSON)", 60),
     ],
 }
 
@@ -180,20 +206,44 @@ def add_row(sheet, fields):
         _save(wb)
 
 
-def update_row(sheet, key, match, fields):
-    """Change the first row whose `key` column equals `match`. Returns False if none does."""
+def _matching_rows(ws, cols, sheet, where):
+    """Row numbers whose columns equal every value in `where`, for example {"user_id": "U0001"}."""
+    wanted = [(cols[_header(sheet, key)], str(value)) for key, value in where.items()]
+    return [r for r in range(2, ws.max_row + 1)
+            if all(str(ws.cell(row=r, column=col).value or "") == value for col, value in wanted)]
+
+
+def update_rows(sheet, where, fields):
+    """Change every row that matches `where`. Returns how many rows changed."""
     with lock:
         wb = _open()
         ws = wb[sheet]
         cols = _columns(ws)
-        key_col = cols[_header(sheet, key)]
-        for r in range(2, ws.max_row + 1):
-            if str(ws.cell(row=r, column=key_col).value or "") == str(match):
-                for k, value in fields.items():
-                    _put(ws.cell(row=r, column=cols[_header(sheet, k)]), value)
-                _save(wb)
-                return True
-        return False
+        found = _matching_rows(ws, cols, sheet, where)
+        for r in found:
+            for key, value in fields.items():
+                _put(ws.cell(row=r, column=cols[_header(sheet, key)]), value)
+        if found:
+            _save(wb)
+        return len(found)
+
+
+def update_row(sheet, key, match, fields):
+    """Change the rows whose `key` column equals `match`. Returns False if none does."""
+    return update_rows(sheet, {key: match}, fields) > 0
+
+
+def delete_rows(sheet, where):
+    """Remove every row that matches `where`. Returns how many rows were removed."""
+    with lock:
+        wb = _open()
+        ws = wb[sheet]
+        found = _matching_rows(ws, _columns(ws), sheet, where)
+        for r in reversed(found):  # Bottom up, so the row numbers above stay right
+            ws.delete_rows(r)
+        if found:
+            _save(wb)
+        return len(found)
 
 
 def add_user(fields):

@@ -1,53 +1,39 @@
 {% extends "base.html" %}
-{% block title %}Chat{% endblock %}
+{% block title %}Concept helper{% endblock %}
+{% block head %}<script src="{{ url_for('static', filename='js/chat.js') }}" defer></script>{% endblock %}
+{% block main_class %}chat-main{% endblock %}
 {% block main %}
-<section class="chat" aria-label="Chat with SAM">
-  {%- if messages %}
+<section class="chat" aria-label="Concept helper">
   <div class="chat-top">
-    <h1 class="sr-only">Chat with SAM</h1>
-    <span class="muted small">{{ "SAM searches the web and answers with NVIDIA Nemotron." if live else "Demo replies: SAM’s AI isn’t connected yet." }}</span>
+    <div>
+      <h1>Concept helper</h1>
+      <p class="muted small">{{ "SAM reads trusted sources, then answers with NVIDIA Nemotron." if live else "Demo mode: SAM answers from its sources and built-in coaching, without an AI model." }} It explains ideas and coaches you through problems, but never hands you the answer.</p>
+    </div>
+    {%- if messages %}
     {# Its own form, so pressing Enter in the message box can't start a new chat. #}
     <form method="post" action="{{ url_for('chat') }}">
       <button class="btn" name="action" value="new"><svg class="i" aria-hidden="true"><use href="#i-plus"/></svg>New chat</button>
     </form>
+    {%- endif %}
   </div>
-  {%- else %}
+
+  {%- if not messages %}
   <div class="hello">
     <span class="logo" aria-hidden="true"><svg class="i"><use href="#i-compass"/></svg></span>
-    <h1>Hello there, how may I assist you today?</h1>
-    <p class="muted">SAM searches the web to help you understand, plan and find opportunities. It guides you through homework but won’t do it for you.</p>
+    <h2>Hello there, how may I assist you today?</h2>
+    <p class="muted">Ask about a school topic, a problem you’re stuck on, or something in everyday life.</p>
   </div>
   {%- endif %}
 
-  <form class="chat-form" method="post" action="{{ url_for('chat') }}">
-    <div class="messages" aria-live="polite">
-      {%- for m in messages %}
-      <div class="msg {{ m.role }}{% if m.error %} error{% endif %}">
-        {%- if m.role == "sam" %}<span class="avatar" aria-hidden="true"><svg class="i"><use href="#i-compass"/></svg></span>{% endif %}
-        <div class="bubble"><span class="sr-only">{{ "SAM said:" if m.role == "sam" else "You said:" }} </span>{{ m.text }}
-          {%- if m.sources %}
-          <div class="sources">
-            <span class="sources-title">{{ "Sources" if m.sources[0].n else "Searched" }}</span>
-            <ol>
-              {%- for s in m.sources %}
-              <li>{% if s.n %}<span class="n">[{{ s.n }}]</span>{% endif %}
-                {%- if s.url %}<span><a href="{{ s.url }}" target="_blank" rel="noopener noreferrer">{{ s.title }}<span class="sr-only"> (opens in a new tab)</span></a> <span class="src-domain">{{ s.url | domain }}</span></span>
-                {%- else %}<span>{{ s.title }}</span>{% endif %}</li>
-              {%- endfor %}
-            </ol>
-          </div>
-          {%- endif -%}
-        </div>
-      </div>
-      {%- endfor %}
-    </div>
+  <div class="messages" aria-live="polite" data-messages>{% include "_messages.html" %}</div>
 
+  <form class="chat-form" method="post" action="{{ url_for('chat') }}" data-chat>
     <div class="composer" id="latest">
       <label for="chatbox" class="sr-only">Message SAM</label>
-      <svg class="i" aria-hidden="true" style="margin-left:8px;color:var(--muted)"><use href="#i-search"/></svg>
-      <input id="chatbox" name="message" type="text" autocomplete="off" maxlength="4000" placeholder="{{ placeholder }}" autofocus>
+      <textarea id="chatbox" name="message" rows="1" maxlength="4000" placeholder="{{ placeholder }}" autofocus></textarea>
       <button class="send" aria-label="Send message"><svg class="i" aria-hidden="true"><use href="#i-send"/></svg></button>
     </div>
+    <p class="hint">Enter to send, Shift+Enter for a new line.</p>
     <div class="stack" style="gap:8px">
       <span class="muted small">Try asking</span>
       <div class="row">
@@ -56,9 +42,7 @@
         {%- endfor %}
       </div>
     </div>
-    {%- if not live %}
-    <p class="muted small" style="text-align:center">Demo mode: replies are scripted until NVIDIA_API_KEY is set (see README).</p>
-    {%- endif %}
+    <p class="error" role="alert" data-chat-error></p>
   </form>
 </section>
 {% endblock %}

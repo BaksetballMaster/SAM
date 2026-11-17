@@ -11,7 +11,7 @@
 {% macro invalid(key) -%}
 {%- if errors[key] %} aria-invalid="true" aria-describedby="{{ key }}-error"{% endif -%}
 {%- endmacro %}
-{% set labels = {"age": "Age", "loc": "Where you live", "playsSports": "Sports", "sports": "Which sports", "sportOther": "Other sport", "volOther": "Other volunteering", "form": "Saving"} %}
+{% set labels = {"age": "Age", "loc": "Where you live", "radius": "Travel distance", "playsSports": "Sports", "sports": "Which sports", "sportOther": "Other sport", "volOther": "Other volunteering", "form": "Saving"} %}
 {% set targets = {"age": "age", "loc": "loc", "playsSports": "sports-fs", "sports": "sport-pick", "sportOther": "sport-other", "volOther": "vol-other"} %}
 
 {% block main %}
@@ -68,6 +68,15 @@
             {%- endfor %}
           </select>
           <p class="hint" id="gender-hint">Helps find girls, boys or co-ed sports clinics.</p>
+        </div>
+        <div class="field">
+          <label for="radius">How far you’ll travel</label>
+          <select id="radius" name="radius" aria-describedby="radius-hint">
+            {%- for miles in radii %}
+            <option value="{{ miles }}"{% if miles == prefs.radius %} selected{% endif %}>{{ miles }} mile{{ "s" if miles != 1 }}</option>
+            {%- endfor %}
+          </select>
+          <p class="hint" id="radius-hint">You can change this on each search.</p>
         </div>
       </div>
     </div>

@@ -33,7 +33,6 @@
       button.classList.remove("is-busy");
       button.removeAttribute("aria-disabled");
     });
-    document.querySelectorAll(".msg.pending, .msg.user.pending").forEach((m) => m.remove());
   });
 
   // When a form comes back with a problem, start at the problem: the survey's error
@@ -55,43 +54,4 @@
     });
   });
 
-  // Chat: show the student's message and "SAM is thinking" while the reply is on its way.
-  const chat = document.querySelector("form.chat-form");
-  if (chat) {
-    const box = chat.querySelector("#chatbox");
-    const list = chat.querySelector(".messages");
-    chat.addEventListener("submit", (event) => {
-      const fromExample = event.submitter && event.submitter.name === "prompt";
-      const text = (fromExample ? event.submitter.value : box.value).trim();
-      if (!text) {
-        event.preventDefault();
-        box.focus();
-        return;
-      }
-      if (chat.dataset.sending) return;
-      document.querySelector(".hello")?.remove();
-
-      const mine = document.createElement("div");
-      mine.className = "msg user pending";
-      const myBubble = document.createElement("div");
-      myBubble.className = "bubble";
-      myBubble.textContent = text;
-      mine.append(myBubble);
-
-      const thinking = document.createElement("div");
-      thinking.className = "msg sam pending";
-      thinking.setAttribute("role", "status");
-      thinking.innerHTML = '<span class="avatar" aria-hidden="true"><svg class="i"><use href="#i-compass"/></svg></span>' +
-        '<div class="bubble"><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>SAM is searching the web and thinking…</div>';
-
-      list.append(mine, thinking);
-      thinking.scrollIntoView({ block: "center", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
-    });
-
-    // After a reply arrives, show the newest messages instead of the top of the page.
-    if (location.hash === "#latest" && list.lastElementChild) {
-      list.lastElementChild.scrollIntoView({ block: "start" });
-      box.focus({ preventScroll: true });
-    }
-  }
 })();

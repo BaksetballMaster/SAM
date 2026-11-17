@@ -1,0 +1,109 @@
+{# Pieces shared by the Volunteer finder, the Sports tracker, My plan and Home. #}
+
+{# Leaflet (the map library) from cdnjs, with integrity hashes. Put in {% block head %}. #}
+{% macro map_assets() -%}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" integrity="sha512-h9FcoyWjHcOcmEVkxOfTLnmZFWIH0iZhZT1H2TbOq55xssQGEJHEaIm+PgoUaZbRvQTNTluNOEfb1ZRy6D3BOw==" crossorigin="anonymous" referrerpolicy="no-referrer">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" integrity="sha512-puJW3E/qXDqYp9IfhAI54BJEaWIfloJ7JWs7OeD5i6ruC9JZL1gERT1wjtwXFlh7CjE7ZJ+/vcRZRkIYIb6p4g==" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
+<script src="{{ url_for('static', filename='js/map.js') }}" defer></script>
+{%- endmacro %}
+
+{# A map of home, the travel radius, and places. The data rides in JSON; static/js/map.js draws it.
+   Without JavaScript (or the map library), the box explains that the list has everything. #}
+{% macro map_box(here, radius, places, saved, label="Map of places near you", tall=False, numbered=False) -%}
+<div class="map{% if tall %} tall{% endif %}" data-map{% if numbered %} data-numbered{% endif %} role="region" aria-label="{{ label }}">
+  <p class="map-fallback muted small">The map needs JavaScript. Every place is also in the list.</p>
+</div>
+<script type="application/json" class="map-data">{{ map_json(here, radius, places, saved) }}</script>
+{%- endmacro %}
+
+{# The search form fields both finders share. #}
+{% macro where_fields(loc, radius) -%}
+<div class="field where-field">
+  <label for="loc">Where</label>
+  <input id="loc" name="loc" type="text" value="{{ loc }}" autocomplete="postal-code" placeholder="Town or ZIP code" required>
+</div>
+<div class="field radius-field">
+  <label for="radius">How far you’ll travel: <output for="radius" data-radius-out>{{ radius }} mile{{ "s" if radius != 1 }}</output></label>
+  <input id="radius" name="radius" type="range" min="1" max="25" step="1" value="{{ radius }}" data-radius aria-describedby="radius-hint">
+  <span class="hint" id="radius-hint">1 to 25 miles, as the crow flies</span>
+</div>
+{%- endmacro %}
+
+{% macro when_fields(day, slot, open_only) -%}
+<div class="field">
+  <label for="day">Day you’re free <span class="optional">(optional)</span></label>
+  <input id="day" name="day" type="date" min="{{ today }}" value="{{ day.isoformat() if day else '' }}">
+</div>
+<div class="field">
+  <label for="slot">Time of day</label>
+  <select id="slot" name="slot">
+    {%- for value, label in [("any", "Any time"), ("morning", "Morning (8 am to noon)"), ("afternoon", "Afternoon (noon to 5 pm)"), ("evening", "Evening (5 to 9 pm)")] %}
+    <option value="{{ value }}"{% if value == slot %} selected{% endif %}>{{ label }}</option>
+    {%- endfor %}
+  </select>
+</div>
+<label class="switch">
+  <input type="checkbox" name="open" value="1" role="switch"{% if open_only %} checked{% endif %}>
+  <span class="switch-track" aria-hidden="true"></span>
+  <span>Hide places that are closed then</span>
+</label>
+{%- endmacro %}
+
+{# The Save / Interested button. Works as a plain form; static/js/map.js turns it into a toggle that doesn't reload the page. #}
+{% macro save_button(place, saved_ids, day, slot, word="Save", done="Saved") -%}
+{%- set is_saved = (place.id or place.item_id) in saved_ids -%}
+<form method="post" action="{{ url_for('plan_toggle') }}" class="save-form" data-save>
+  <input type="hidden" name="item" value="{{ place | item }}">
+  <input type="hidden" name="day" value="{{ day.isoformat() if day else '' }}">
+  <input type="hidden" name="slot" value="{{ slot }}">
+  <input type="hidden" name="next" value="{{ request.full_path }}">
+  <button class="btn save-btn" aria-pressed="{{ 'true' if is_saved else 'false' }}" data-word="{{ word }}" data-done="{{ done }}">
+    <svg class="i" aria-hidden="true"><use href="#i-bookmark"/></svg><span class="label">{{ done if is_saved else word }}</span>
+  </button>
+</form>
+{%- endmacro %}
+
+{# One real place: distance, address, hours, (typical shift), and what to do next. #}
+{% macro place_card(place, saved_ids, day, slot, word="Save", done="Saved") -%}
+<article class="place" data-place="{{ place.id }}" id="place-{{ place.id | replace(':', '-') }}">
+  <div class="place-top">
+    <span class="tag {{ place.kind }}">{{ place.topic }}</span>
+    {%- if place.place_kind %}<span class="small muted">{{ place.place_kind }}</span>{% endif %}
+    <span class="distance">{{ place.miles }} mi</span>
+  </div>
+  <h3>{{ place.name }}</h3>
+  <p class="small muted">{{ place.address or "Street address not listed" }}</p>
+  <dl class="facts">
+    <div>
+      <dt><svg class="i" aria-hidden="true"><use href="#i-clock"/></svg><span class="sr-only">Hours</span></dt>
+      <dd>{% if place.open_text %}<span class="open open-{{ place.open_status or 'unknown' }}">{{ place.open_text }}</span>{% endif %}
+        {%- if place.hours_text %}<span class="small muted hours">{{ place.hours_text }}</span>{% endif %}</dd>
+    </div>
+    {%- if place.commitment %}
+    <div>
+      <dt><svg class="i" aria-hidden="true"><use href="#i-calendar"/></svg><span class="sr-only">Time commitment</span></dt>
+      <dd>{{ place.commitment }}</dd>
+    </div>
+    {%- endif %}
+  </dl>
+  <div class="place-actions">
+    <a class="btn primary" href="{{ place.signup }}" target="_blank" rel="noopener">{{ place.signup_label }}<span class="sr-only"> (opens in a new tab)</span></a>
+    {{ save_button(place, saved_ids, day, slot, word, done) }}
+    <a class="btn ghost" href="{{ place.directions }}" target="_blank" rel="noopener"><svg class="i" aria-hidden="true"><use href="#i-route"/></svg>Directions<span class="sr-only"> (opens in a new tab)</span></a>
+    <button type="button" class="btn ghost" data-focus="{{ place.id }}" hidden><svg class="i" aria-hidden="true"><use href="#i-pin"/></svg>Show on map</button>
+  </div>
+</article>
+{%- endmacro %}
+
+{# A web page (from web search or SAM's list), with no map point. #}
+{% macro link_card(site, saved_ids, day, slot, word="Save", done="Saved") -%}
+<article class="place link-card">
+  <div class="place-top"><span class="tag {{ site.kind }}">{{ site.topic }}</span><span class="small muted">{{ site.url | domain }}</span></div>
+  <h3>{{ site.title }}</h3>
+  <p class="small muted">{{ site.text }}</p>
+  <div class="place-actions">
+    <a class="btn primary" href="{{ site | go }}" target="_blank" rel="noopener">Visit {{ site.url | domain }}<span class="sr-only"> (opens in a new tab)</span></a>
+    {{ save_button(site | with_id, saved_ids, day, slot, word, done) }}
+  </div>
+</article>
+{%- endmacro %}

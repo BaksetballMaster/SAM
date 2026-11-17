@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% from "_finder.html" import map_assets, map_box %}
+{% block title %}Home{% endblock %}
+{% block head %}{{ map_assets() }}{% endblock %}
+{% block main %}
+<section class="page home" aria-labelledby="home-title">
+  <div class="home-hero">
+    <div class="home-where">
+      <h1 id="home-title">Hi {{ user.name }}, here’s what’s around you</h1>
+      {%- if here %}
+      <p class="muted">SAM searches within <strong>{{ prefs.radius }} mile{{ "s" if prefs.radius != 1 }}</strong> of <strong>{{ here.label }}</strong>. The pins are places in your plan.</p>
+      {%- else %}
+      <p class="muted">SAM hasn’t placed “{{ prefs.loc }}” on the map yet. Check it below.</p>
+      {%- endif %}
+      <form class="where-form" method="post" action="{{ url_for('home') }}">
+        <div class="field">
+          <label for="home-loc">Where you live</label>
+          <input id="home-loc" name="loc" type="text" value="{{ prefs.loc }}" autocomplete="postal-code" placeholder="Town or ZIP code"{% if problem %} aria-invalid="true" aria-describedby="home-loc-error"{% endif %}>
+          {%- if problem %}<p class="field-error" id="home-loc-error">{{ problem }}</p>{% endif %}
+        </div>
+        <div class="field">
+          <label for="home-radius">How far you’ll travel</label>
+          <select id="home-radius" name="radius">
+            {%- for miles in radii %}
+            <option value="{{ miles }}"{% if miles == prefs.radius %} selected{% endif %}>{{ miles }} mile{{ "s" if miles != 1 }}</option>
+            {%- endfor %}
+          </select>
+        </div>
+        <button class="btn">Update</button>
+      </form>
+    </div>
+    {%- if here %}
+    <div class="home-map">{{ map_box(here, prefs.radius, plan, plan | map(attribute="item_id") | list, "Map of your area") }}</div>
+    {%- endif %}
+  </div>
+
+  <h2 class="sr-only">SAM’s assistants</h2>
+  <div class="assistants">
+    <article class="assistant volunteer">
+      <div class="assistant-head"><span class="assistant-icon" aria-hidden="true"><svg class="i"><use href="#i-heart"/></svg></span><h3>Volunteer finder</h3></div>
+      <p class="muted small">Animal shelters, food banks, libraries and parks near you, with hours and how to sign up.</p>
+      <form method="get" action="{{ url_for('volunteer_page') }}" class="inline-form">
+        <label for="dash-category" class="sr-only">Kind of volunteering</label>
+        <select id="dash-category" name="category">
+          {%- for value, label in categories %}
+          <option value="{{ value }}"{% if value == default_category %} selected{% endif %}>{{ label }}</option>
+          {%- endfor %}
+        </select>
+        <button class="btn primary">Find places</button>
+      </form>
+    </article>
+
+    <article class="assistant sports">
+      <div class="assistant-head"><span class="assistant-icon" aria-hidden="true"><svg class="i"><use href="#i-trophy"/></svg></span><h3>Sports tracker</h3></div>
+      <p class="muted small">Places to play and train near you, on a map, plus searches for clinics and camps.</p>
+      <form method="get" action="{{ url_for('sports_page') }}">
+        <input type="hidden" name="loc" value="{{ prefs.loc }}">
+        <input type="hidden" name="radius" value="{{ prefs.radius }}">
+        <div class="row">
+          {%- for sport in sport_choices %}
+          <label class="btn chip"><input class="sr-only" type="checkbox" name="sport" value="{{ sport }}"{% if sport in my_sports %} checked{% endif %}><svg class="i" aria-hidden="true"><use href="#i-check"/></svg>{{ sport }}</label>
+          {%- endfor %}
+        </div>
+        <button class="btn primary">Show on the map</button>
+      </form>
+    </article>
+
+    <article class="assistant concepts">
+      <div class="assistant-head"><span class="assistant-icon" aria-hidden="true"><svg class="i"><use href="#i-book"/></svg></span><h3>Concept helper</h3></div>
+      <p class="muted small">Stuck on homework or something in life? SAM explains the idea and coaches you through it, but won’t hand you the answer.</p>
+      <form method="post" action="{{ url_for('chat') }}" class="ask-form">
+        <label for="dash-ask" class="sr-only">Ask SAM</label>
+        <textarea id="dash-ask" name="message" rows="2" placeholder="What are you working on?"></textarea>
+        <button class="btn primary">Ask SAM</button>
+      </form>
+      <div class="row">
+        {%- for x in examples %}
+        <form method="post" action="{{ url_for('chat') }}"><button class="btn pill" name="prompt" value="{{ x }}">{{ x }}</button></form>
+        {%- endfor %}
+      </div>
+    </article>
+
+    <article class="assistant code">
+      <div class="assistant-head"><span class="assistant-icon" aria-hidden="true"><svg class="i"><use href="#i-code"/></svg></span><h3>Code translator</h3></div>
+      <p class="muted small">Paste code and see what every line does in plain English, or turn it into pseudocode. You can even invent your own language.</p>
+      <pre class="code-peek" aria-hidden="true"><span>for score in scores:</span><em>Goes through scores one at a time</em></pre>
+      <a class="btn primary" href="{{ url_for('code') }}">Open the translator</a>
+    </article>
+  </div>
+
+  <div class="home-lower">
+    <section class="panel-lite" aria-labelledby="coming-title">
+      <div class="panel-head"><h2 id="coming-title">Coming up</h2><a href="{{ url_for('plan') }}">My plan</a></div>
+      {%- if upcoming %}
+      <ol class="mini-list">
+        {%- for item in upcoming %}
+        <li><strong>{{ item.date | pretty_day }}{% if item.time %}, {{ item.time | pretty_time }}{% endif %}</strong><span>{{ item.title }}</span></li>
+        {%- endfor %}
+      </ol>
+      {%- elif plan %}
+      <p class="muted small">You’ve saved {{ plan | length }} place{{ "s" if plan | length != 1 }}. <a href="{{ url_for('plan') }}">Pick days</a> to see them here.</p>
+      {%- else %}
+      <p class="muted small">Nothing planned yet. Save a place from either finder and it shows up here.</p>
+      {%- endif %}
+    </section>
+    <section class="panel-lite" aria-labelledby="pop-mini-title">
+      <div class="panel-head"><h2 id="pop-mini-title">Popular near you</h2><a href="{{ url_for('popular') }}">See all</a></div>
+      <ol class="mini-list">
+        {%- for column, item in popular_now %}
+        <li><strong>{{ column }}</strong><span>{{ item.title }}{% if not item.real %} <span class="muted">(suggested)</span>{% endif %}</span></li>
+        {%- endfor %}
+      </ol>
+    </section>
+  </div>
+</section>
+{% endblock %}

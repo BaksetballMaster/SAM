@@ -5,27 +5,34 @@ the backend endpoint it stands for (see SAM_Backend/README.md), so it can move
 behind a separate API later without changing the pages.
 
 Where things live:
-    database.py           accounts, survey answers, activity and shared links (an Excel workbook)
+    database.py           accounts, survey answers, saved plans, activity and shared links (an Excel workbook)
     sign_in_providers.py  Continue with Google / Apple
-    sam_ai.py             the chat with SAM (NVIDIA Nemotron) and web search
+    sam_ai.py             the AI model (NVIDIA Nemotron) and web search
+    services/             the map, places, Wikipedia and other outside services
+    assistants/           the four assistants: Volunteer finder, Sports tracker,
+                          Concept helper and Code translator
 """
 
+import json
 import re
 import secrets
 import time
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from urllib.parse import quote, urlparse
 
 from werkzeug.security import check_password_hash, generate_password_hash
 
 import database as db
 import sam_ai
+from assistants import code_translator, concepts, finder, guardrails, sports, volunteer
+from services import geo
 
 SPORTS = ["Soccer", "Basketball", "Track & Field", "Swimming", "Tennis", "Cricket", "Volleyball", "Martial arts", "Other"]
 VOLUNTEER = ["Tutoring younger kids", "Environment & parks", "Animal shelters", "Food banks", "Hospitals & senior care", "Coding for nonprofits", "Other"]
 GENDERS = [("female", "Female"), ("male", "Male"), ("nonbinary", "Non-binary"), ("na", "Prefer not to say")]
 AGES = [str(a) for a in range(10, 19)]
-EXAMPLES = ["Help me understand photosynthesis", "How do I start learning Python?", "Check my essay thesis", "Find soccer leagues near me", "Volunteering for students my age"]
+EXAMPLES = ["Help me understand photosynthesis", "How do I manage my time during finals week?", "How do I write a strong thesis statement?",
+            "Why did the Roman Empire fall?", "How do I open a bank account as a teen?", "Solve 2x + 6 = 14"]
 
 EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 USERNAME_RE = re.compile(r"^[a-z0-9_.]{3,20}$")
@@ -39,7 +46,8 @@ _NO_USER_HASH = generate_password_hash("not-a-real-password", method=HASH_METHOD
 
 
 def blank_prefs():
-    return {"age": "", "loc": "", "gender": "", "playsSports": None, "sports": [], "sportOther": "", "vol": [], "volOther": ""}
+    return {"age": "", "loc": "", "gender": "", "playsSports": None, "sports": [], "sportOther": "", "vol": [], "volOther": "",
+            "radius": finder.DEFAULT_RADIUS}
 
 
 def ok(**data):
@@ -213,18 +221,76 @@ def check_prefs(form):
     prefs["volOther"] = _text(form.get("volOther"), 60) if "Other" in prefs["vol"] else ""
     if "Other" in prefs["vol"] and not prefs["volOther"]:
         errors["volOther"] = "Type how else you'd like to volunteer."
+    prefs["radius"] = finder.clean_radius(form.get("radius"))
     return prefs, errors
+
+
+def _user_row(user_id):
+    return next((u for u in _users() if u["user_id"] == user_id), None)
+
+
+def _place_fields(user_id, loc):
+    """Find where the student lives on the map. Returns (fields to save, problem).
+
+    Only looks the place up again when it changed. If the map service can't be
+    reached, the place is saved without a point and looked up again later.
+    """
+    row = _user_row(user_id) or {}
+    if str(row.get("loc") or "").strip().lower() == loc.strip().lower() and row.get("lat") not in ("", None):
+        return {}, ""
+    found = geo.geocode(loc)
+    if found == {}:
+        return {}, f"SAM couldn’t find “{loc}” on the map. Try your ZIP code, or a town and state like “Austin, TX”."
+    if not found:
+        return {"lat": None, "lon": None, "place": ""}, ""
+    return {"lat": found["lat"], "lon": found["lon"], "place": found["label"]}, ""
 
 
 def save_preferences(user_id, prefs):
     """BACKEND: POST /api/preferences  prefs object"""
+    place, problem = _place_fields(user_id, prefs["loc"])
+    if problem:
+        return fail(problem, "loc")
     found = db.update_row("Users", "user_id", user_id, {
         "age": int(prefs["age"]), "loc": prefs["loc"], "gender": dict(GENDERS).get(prefs["gender"], ""),
         "plays_sports": {"yes": "Yes", "no": "No"}.get(prefs["playsSports"], ""),
         "sports": ", ".join(prefs["sports"]), "sport_other": prefs["sportOther"],
         "vol": ", ".join(prefs["vol"]), "vol_other": prefs["volOther"], "survey_saved": db.now(),
+        "radius": prefs.get("radius", finder.DEFAULT_RADIUS), **place,
     })
     return ok() if found else fail("SAM couldn’t find your account. Sign in again.")
+
+
+def set_home(user_id, loc, radius):
+    """BACKEND: POST /api/home  Change where the student lives and how far they'll travel (the dashboard form)."""
+    loc = _text(loc)
+    if len(loc) < 2:
+        return fail("Enter your town or ZIP code.", "loc")
+    place, problem = _place_fields(user_id, loc)
+    if problem:
+        return fail(problem, "loc")
+    db.update_row("Users", "user_id", user_id, {"loc": loc, "radius": finder.clean_radius(radius), **place})
+    return ok()
+
+
+def home_of(user_id):
+    """Where the student lives on the map: {"lat", "lon", "label"}, or None if SAM can't place it yet."""
+    row = _user_row(user_id)
+    if not row or not str(row.get("loc") or "").strip():
+        return None
+    try:
+        return {"lat": float(row["lat"]), "lon": float(row["lon"]), "label": str(row["place"] or row["loc"])}
+    except (TypeError, ValueError):
+        pass
+    found = geo.geocode(str(row["loc"]))  # Saved while the map service was down: try again now
+    if found:
+        db.update_row("Users", "user_id", user_id, {"lat": found["lat"], "lon": found["lon"], "place": found["label"]})
+    return found or None
+
+
+def locate(text):
+    """A place a student typed into a finder: {"lat", "lon", "label"}, {} if it doesn't exist, None if SAM couldn't check."""
+    return geo.geocode(_text(text))
 
 
 def load_preferences(user_id):
@@ -239,6 +305,7 @@ def load_preferences(user_id):
         "playsSports": {"Yes": "yes", "No": "no"}.get(str(u["plays_sports"])),
         "sports": [s for s in SPORTS if s in split(u["sports"])], "sportOther": str(u["sport_other"]),
         "vol": [v for v in VOLUNTEER if v in split(u["vol"])], "volOther": str(u["vol_other"]),
+        "radius": finder.clean_radius(u.get("radius")),
     }
 
 
@@ -335,17 +402,6 @@ def get_study_resources():
 
 # ---------- Activity and Popular near you ----------
 
-SUBJECTS = [
-    ("Math", r"\b(math\w*|algebra|equations?|geometry|calculus|fractions?|trig\w*|statistics?)\b"),
-    ("Science", r"photosynth|biology|cell|science|chem|physics|atom|ecosystem"),
-    ("Coding", r"code|coding|program|python|javascript|java\b|html|css|app\b"),
-    ("Writing and essays", r"\b(essays?|thesis|paragraphs?|writing|grammar|poems?)\b"),
-    ("Test prep", r"\bsat\b|\bpsat\b|\bact\b|\bap\b|exam|test prep|finals"),
-    ("History and civics", r"history|civics|government|election|war\b"),
-    ("Languages", r"spanish|french|hindi|mandarin|chinese|german|language"),
-]
-
-
 def area_of(loc):
     """Students "near" each other: the same first 3 ZIP digits, or the same town name."""
     loc = " ".join(str(loc or "").lower().replace(",", " ").split())
@@ -362,7 +418,7 @@ def log_open(user_id, prefs, site):
 
 def log_chat_subject(user_id, prefs, message):
     """Only the subject is saved (for example "Math"), never what the student wrote."""
-    subject = next((name for name, pattern in SUBJECTS if re.search(pattern, message, re.I)), None)
+    subject = guardrails.subject_of(message)
     if subject:
         db.add_row("Activity", {"time": db.now(), "user_id": user_id, "area": area_of(prefs["loc"]), "category": "chat",
                                 "topic": subject, "title": f"{subject} help", "url": ""})
@@ -446,49 +502,184 @@ def add_shared_resource(url, posted_by, age, user_id=""):
     return ok()
 
 
-# ---------- Chat ----------
-
-SOURCE_LINKS = {
-    "Purdue OWL": "https://owl.purdue.edu", "Khan Academy": "https://www.khanacademy.org", "PhET Simulations": "https://phet.colorado.edu",
-    "Desmos": "https://www.desmos.com", "Brilliant": "https://brilliant.org", "Boot.dev": "https://www.boot.dev",
-    "VolunteerMatch": "https://www.volunteermatch.org", "DoSomething.org": "https://dosomething.org",
-}
-
+# ---------- The Concept helper (chat) ----------
 
 def chat_is_live():
     return sam_ai.chat_configured()
 
 
 def ask_sam(message, history, prefs):
-    """BACKEND: POST /api/chat  { message, history }  -> {"text", "sources": [{"n", "title", "url"}]}
+    """BACKEND: POST /api/chat  { message, history }
 
-    Uses NVIDIA Nemotron with web search when NVIDIA_API_KEY is set,
-    otherwise SAM's scripted demo replies.
+    Returns a reply dict: {"text", "main", "deep_dives", "sources", "guard", "mode", "error"}.
+    See assistants/concepts.py for how the reply is made, and how SAM avoids giving answers away.
     """
-    if sam_ai.chat_configured():
-        return sam_ai.ask(message, history, prefs)
-    reply = _scripted_reply(message, prefs)
-    reply["sources"] = [{"n": None, "title": s, "url": SOURCE_LINKS.get(s, "")} for s in reply["sources"]]
-    return reply
+    return concepts.ask(message, history, prefs)
 
 
-def _scripted_reply(message, prefs):
-    t = message.lower()
-    where = prefs["loc"].strip() or "your area"
-    if re.search(r"answer|do my|write my|just give|solve it for", t):
-        return {"text": "I can’t hand you the answer, but I can get you unstuck.\nWhat is the question asking for, and what have you tried so far? Share your first step and I’ll tell you whether you’re on track.", "sources": []}
-    if re.search(r"\b(essays?|thesis|paragraphs?)\b", t):
-        return {"text": "Let’s pressure-test your thesis.\n1. Can you say your main claim in one sentence?\n2. Could a reasonable person disagree with it? If not, it may be a fact, not an argument.\n3. Which two pieces of evidence support it best?\nSend me your sentence and I’ll ask you a follow-up.", "sources": ["Purdue OWL", "Khan Academy"]}
-    if re.search(r"photosynth|biology|cell|science|chem|physics", t):
-        return {"text": "Good topic. Before I explain, what do you already know about what plants need to grow?\nStart there, and we’ll connect it to where the energy actually comes from. A short video plus a simulation usually makes this click.", "sources": ["Khan Academy", "PhET Simulations"]}
-    if re.search(r"\b(math|algebra|equations?|geometry|calculus|graphs?)\b", t):
-        return {"text": "Let’s break it down. What do you know, and what are you trying to find?\nWrite the first step you’d try. To check yourself visually, graph both sides and see where they meet.", "sources": ["Desmos", "Brilliant"]}
-    if re.search(r"code|coding|program|python|javascript", t):
-        return {"text": "Nice. Are you starting from zero or do you already know some basics?\nIf zero: pick one language and build something tiny this week. If you know basics: try a project course that makes you write real code.", "sources": ["Boot.dev", "Khan Academy"]}
-    if re.search(r"sport|team|tryout|league|soccer|basketball|cricket|tennis|swim", t):
-        picked = [s for s in prefs["sports"] if s != "Other"]
-        which = ", ".join(picked) if picked else "sports"
-        return {"text": f"I looked for {which} near {where}.\nWith web search turned on, I’d list current club teams, rec leagues and tryout dates here with links. Want options that fit after school or on weekends?", "sources": []}
-    if re.search(r"volunteer|service|hours|nonprofit", t):
-        return {"text": f"I looked for volunteering near {where} that matches what you picked.\nWith web search turned on, I’d show openings with age requirements and how to sign up. How many hours a month can you give?", "sources": ["VolunteerMatch", "DoSomething.org"]}
-    return {"text": "Let’s work through it together. What subject is this, and which part feels confusing?\nTell me what you already understand and I’ll ask you a question to take the next step.", "sources": []}
+# ---------- Volunteer finder and Sports tracker ----------
+
+VOLUNTEER_CATEGORIES = [(c[0], c[1]) for c in [volunteer.ANY] + volunteer.CATEGORIES]
+SPORT_CHOICES = sports.SPORTS
+SPORT_GROUPS = sports.GROUPS
+RADIUS_CHOICES = finder.RADIUS_CHOICES
+
+
+def find_volunteering(home, radius, category_id, day, slot, open_only=False):
+    """BACKEND: GET /api/volunteer?lat=...&lon=...&radius=...&category=...&day=...&slot=..."""
+    return volunteer.find(home, radius, category_id, day, slot, open_only)
+
+
+def find_sports(home, radius, chosen_sports, group, day, slot, open_only=False):
+    """BACKEND: GET /api/sports?lat=...&lon=...&radius=...&sports=...&group=...&day=...&slot=..."""
+    return sports.find(home, radius, chosen_sports, group, day, slot, open_only)
+
+
+# ---------- My plan (saved places) ----------
+
+SAVED_FIELDS = ("kind", "item_id", "title", "detail", "address", "url", "lat", "lon")
+TIME_SLOTS = {"morning": "10:00", "afternoon": "14:00", "evening": "18:00"}
+
+
+def saved_items(user_id):
+    """BACKEND: GET /api/saved  The student's saved places, the soonest planned day first."""
+    items = []
+    for row in db.rows("Saved"):
+        if row["user_id"] != user_id:
+            continue
+        day = row["date"].date() if isinstance(row["date"], datetime) else (row["date"] if isinstance(row["date"], date) else None)
+        items.append({**{k: row[k] for k in SAVED_FIELDS}, "date": day, "time": str(row["time"] or ""), "saved": row["saved"],
+                      "lat": _number(row["lat"]), "lon": _number(row["lon"])})
+    return sorted(items, key=lambda i: (i["date"] is None, i["date"] or date.max, i["time"] or "99", str(i["title"]).lower()))
+
+
+def saved_ids(user_id):
+    return {i["item_id"] for i in saved_items(user_id)}
+
+
+def _number(value):
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def toggle_saved(user_id, item, day=None, slot="any"):
+    """BACKEND: POST /api/saved/toggle  Save a place to My plan, or take it off. Returns ok(saved=True|False)."""
+    url = str(item.get("url") or "")
+    if url and not re.match(r"^https?://", url):
+        url = ""
+    with db.lock:
+        if db.delete_rows("Saved", {"user_id": user_id, "item_id": item["item_id"]}):
+            return ok(saved=False)
+        db.add_row("Saved", {
+            "saved": db.now(), "user_id": user_id, "kind": item.get("kind", ""), "item_id": str(item["item_id"])[:60],
+            "title": str(item.get("title", ""))[:120], "detail": str(item.get("detail", ""))[:120],
+            "address": str(item.get("address", ""))[:160], "url": url[:300],
+            "lat": _number(item.get("lat")), "lon": _number(item.get("lon")),
+            "date": datetime.combine(day, datetime.min.time()) if day else None,
+            "time": TIME_SLOTS.get(slot, ""),
+        })
+    prefs = load_preferences(user_id) or blank_prefs()
+    log_open(user_id, prefs, {"kind": item.get("kind"), "topic": item.get("detail", ""), "title": item.get("title", ""), "url": url})
+    return ok(saved=True)
+
+
+def plan_item(user_id, item_id, day_text, time_text):
+    """BACKEND: POST /api/saved/<item_id>  Change the day and time a student plans to go."""
+    try:
+        day = datetime.strptime(day_text, "%Y-%m-%d") if day_text else None
+    except ValueError:
+        return fail("Choose a day from the calendar.")
+    if time_text and not re.fullmatch(r"([01]\d|2[0-3]):[0-5]\d", time_text):
+        return fail("Choose a time, like 4:00 PM.")
+    changed = db.update_rows("Saved", {"user_id": user_id, "item_id": item_id}, {"date": day, "time": time_text or ""})
+    return ok() if changed else fail("That place isn't in your plan any more.")
+
+
+def remove_saved(user_id, item_id):
+    """BACKEND: DELETE /api/saved/<item_id>"""
+    db.delete_rows("Saved", {"user_id": user_id, "item_id": item_id})
+    return ok()
+
+
+def plan_calendar(user_id):
+    """My plan as an iCalendar file, for Google Calendar, Apple Calendar or Outlook. Only items with a day are included."""
+    def text(value):
+        return str(value or "").replace("\\", "\\\\").replace(";", "\\;").replace(",", "\\,").replace("\n", "\\n")
+    stamp = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
+    lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//SAM//Student Assistant Machine//EN", "CALSCALE:GREGORIAN"]
+    for item in saved_items(user_id):
+        if not item["date"]:
+            continue
+        if item["time"]:
+            start = datetime.combine(item["date"], datetime.strptime(item["time"], "%H:%M").time())
+            when = [f"DTSTART:{start:%Y%m%dT%H%M%S}", f"DTEND:{start + timedelta(hours=2):%Y%m%dT%H%M%S}"]
+        else:
+            when = [f"DTSTART;VALUE=DATE:{item['date']:%Y%m%d}", f"DTEND;VALUE=DATE:{item['date'] + timedelta(days=1):%Y%m%d}"]
+        lines += ["BEGIN:VEVENT", f"UID:{re.sub(r'[^A-Za-z0-9]', '', item['item_id'])}-{user_id}@sam", f"DTSTAMP:{stamp}", *when,
+                  f"SUMMARY:{text(item['title'])}", f"LOCATION:{text(item['address'])}",
+                  f"DESCRIPTION:{text(item['detail'])}{text(' - ' + item['url']) if item['url'] else ''}", "END:VEVENT"]
+    lines.append("END:VCALENDAR")
+    return "\r\n".join(lines) + "\r\n"
+
+
+# ---------- Code translator ----------
+
+def code_languages(user_id):
+    """The languages the student can pick: SAM's, then the ones they made."""
+    built_in = [{"id": lang_id, "name": name, "mode": mode, "custom": False} for lang_id, name, _, mode in code_translator.LANGUAGES]
+    return built_in + [{"id": "custom:" + c["name"], "name": c["name"], "mode": "python", "custom": True} for c in custom_languages(user_id)]
+
+
+def custom_languages(user_id):
+    """The made-up languages a student saved: [{"name", "words"}]."""
+    found = []
+    for row in db.rows("Languages"):
+        if row["user_id"] == user_id:
+            try:
+                words = json.loads(str(row["spec"]))
+            except ValueError:
+                continue
+            language, _ = code_translator.clean_language(str(row["name"]), words)
+            if language:
+                found.append(language)
+    return found
+
+
+def save_language(user_id, name, words):
+    """BACKEND: POST /api/languages  Save (or replace) one of the student's made-up languages."""
+    language, problem = code_translator.clean_language(name, words)
+    if problem:
+        return fail(problem)
+    with db.lock:
+        mine = custom_languages(user_id)
+        if len(mine) >= 5 and not any(c["name"].lower() == language["name"].lower() for c in mine):
+            return fail("You can keep up to 5 languages. Delete one to make room.")
+        for old in mine:
+            if old["name"].lower() == language["name"].lower():
+                db.delete_rows("Languages", {"user_id": user_id, "name": old["name"]})
+        db.add_row("Languages", {"saved": db.now(), "user_id": user_id, "name": language["name"],
+                                 "spec": json.dumps(language["words"], ensure_ascii=False)})
+    return ok(language=language)
+
+
+def delete_language(user_id, name):
+    """BACKEND: DELETE /api/languages/<name>"""
+    db.delete_rows("Languages", {"user_id": user_id, "name": name})
+    return ok()
+
+
+def explain_code(user_id, code, language_id, mirror=""):
+    """BACKEND: POST /api/code/explain  { code, language, mirror }
+
+    language_id is a built-in id ("python") or "custom:<name>" for one of the student's languages.
+    mirror names one of the student's languages to show Python code in.
+    """
+    custom = {c["name"]: c for c in custom_languages(user_id)}
+    if language_id.startswith("custom:"):
+        language = custom.get(language_id[len("custom:"):])
+        if not language:
+            return fail("That language was deleted. Choose another one.")
+        return code_translator.explain(code, "python", custom=language)
+    return code_translator.explain(code, language_id, mirror_into=custom.get(mirror) if language_id == "python" else None)

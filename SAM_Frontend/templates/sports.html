@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% from "_finder.html" import map_assets, map_box, where_fields, when_fields, place_card, link_card %}
+{% block title %}Sports tracker{% endblock %}
+{% block head %}{{ map_assets() }}{% endblock %}
+{% block main %}
+<section class="page" aria-labelledby="sports-title">
+  <div class="page-head">
+    <h1 id="sports-title">Sports tracker</h1>
+    <p class="muted">Fields, courts, pools, tracks and clubs near you for the sports you like. Mark the ones you’re interested in to build your plan.</p>
+  </div>
+
+  <form class="filters" method="get" action="{{ url_for('sports_page') }}" data-search>
+    <fieldset class="field sports-field">
+      <legend class="label">Sports you’re interested in</legend>
+      <div class="row" data-tags>
+        {%- for sport in sport_choices %}
+        <label class="btn chip"><input class="sr-only" type="checkbox" name="sport" value="{{ sport }}"{% if sport in chosen %} checked{% endif %}><svg class="i" aria-hidden="true"><use href="#i-check"/></svg>{{ sport }}</label>
+        {%- endfor %}
+        <span class="tag-input">
+          <label for="other" class="sr-only">Another sport</label>
+          <input id="other" name="other" type="text" placeholder="Another sport, like fencing" value="{{ other[0] if other else '' }}" maxlength="40">
+        </span>
+      </div>
+    </fieldset>
+    {{ where_fields(loc, radius) }}
+    <fieldset class="field">
+      <legend class="label">Programs for</legend>
+      <div class="segmented">
+        {%- for value, label in groups %}
+        <label><input type="radio" name="group" value="{{ value }}"{% if value == group %} checked{% endif %}><span>{{ label }}</span></label>
+        {%- endfor %}
+      </div>
+    </fieldset>
+    {{ when_fields(day, slot, open_only) }}
+    <div class="filters-go">
+      <button class="btn primary" data-busy-text="Searching…"><svg class="i" aria-hidden="true"><use href="#i-search"/></svg><span class="label">Find places to play</span></button>
+    </div>
+  </form>
+
+  {%- if problem %}
+  <p class="alert" role="alert">{{ problem }}</p>
+  {%- elif not found and not chosen %}
+  <div class="empty"><p>Pick a sport above to see places near you.</p></div>
+  {%- endif %}
+
+  {%- if found %}
+  <div class="results-head" role="status">
+    <h2>{{ found.places | length }} place{{ "s" if found.places | length != 1 }} within {{ radius }} mile{{ "s" if radius != 1 }} of {{ here.label }}</h2>
+    <p class="small muted">{{ chosen | join(", ") }}, for {{ when }}.{% if group != "any" %} Most places don’t say who their programs are for, so SAM only hides places whose names say they’re for the other group.{% endif %}</p>
+  </div>
+  {%- if found.problem %}<p class="note">{{ found.problem }}</p>{% endif %}
+
+  <div class="split">
+    <div class="split-list numbered-places">
+      {%- for place in found.places %}{{ place_card(place, saved, day, slot, "Interested", "Interested") }}{% endfor %}
+      {%- if not found.places %}
+      <div class="empty"><p>No places found within {{ radius }} miles{% if open_only %} that are open {{ when }}{% endif %}. Try a longer distance or another sport.</p></div>
+      {%- endif %}
+
+      <h2 class="section-title">Clinics and camps</h2>
+      {%- if found.clinics %}
+      <p class="muted small">Listings from the web. Check dates and ages on each site.</p>
+      {%- for site in found.clinics %}{{ link_card(site, saved, day, slot, "Interested", "Interested") }}{% endfor %}
+      {%- else %}
+      <p class="muted small">The map shows places, not clinic dates. These searches find upcoming clinics and camps near you:</p>
+      <ul class="link-list">
+        {%- for link in found.clinic_links %}
+        <li><a href="{{ link.url }}" target="_blank" rel="noopener"><svg class="i" aria-hidden="true"><use href="#i-search"/></svg>{{ link.sport }} clinics near {{ here.label }}<span class="sr-only"> (opens in a new tab)</span></a></li>
+        {%- endfor %}
+      </ul>
+      {%- endif %}
+    </div>
+    <div class="split-map">
+      {{ map_box(here, radius, found.places, saved, "Map of places to play near " ~ here.label, tall=True, numbered=True) }}
+    </div>
+  </div>
+  {%- endif %}
+</section>
+{% endblock %}

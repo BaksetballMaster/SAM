@@ -1,0 +1,33 @@
+{# The right-hand pane of the Code translator. Used by code.html, and by /code/explain to update without reloading. #}
+<div class="result" data-result>
+  <div class="result-head">
+    <p class="result-summary">{{ result.summary }}</p>
+    <label class="switch">
+      <input type="checkbox" class="pseudo-toggle" role="switch" data-pseudo-toggle>
+      <span class="switch-track" aria-hidden="true"></span>
+      <span>Show as pseudocode</span>
+    </label>
+  </div>
+  <p class="small muted engine">{{ "Explained by NVIDIA Nemotron." if result.engine == "model" else "Explained by SAM’s built-in explainer." }}{% if result.note %} {{ result.note }}{% endif %}</p>
+
+  <ol class="line-list" aria-label="What each line does">
+    {%- for row in result.lines %}
+    <li class="line depth-{{ [row.depth, 6] | min }}">
+      <span class="ln" aria-label="Line {{ row.n }}">{{ row.n }}</span>
+      <code class="line-code">{{ row.code }}</code>
+      <p class="line-text">{{ row.text | inline_md }}</p>
+    </li>
+    {%- endfor %}
+  </ol>
+
+  <div class="pseudo-view">
+    <pre class="pseudo" aria-label="Pseudocode">{{ result.pseudocode }}</pre>
+  </div>
+
+  {%- if result.mirror %}
+  <div class="mirror">
+    <h3>{{ result.mirror.title }}</h3>
+    <pre class="code-block">{{ result.mirror.code }}</pre>
+  </div>
+  {%- endif %}
+</div>

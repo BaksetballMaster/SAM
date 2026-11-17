@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% from "_finder.html" import map_assets, map_box, where_fields, when_fields, place_card, link_card %}
+{% block title %}Volunteer finder{% endblock %}
+{% block head %}{{ map_assets() }}{% endblock %}
+{% block main %}
+<section class="page" aria-labelledby="vol-title">
+  <div class="page-head">
+    <h1 id="vol-title">Volunteer finder</h1>
+    <p class="muted">Real places near you that take volunteers, from OpenStreetMap. Pick a kind of volunteering and when you’re free.</p>
+  </div>
+
+  <form class="filters" method="get" action="{{ url_for('volunteer_page') }}" data-search>
+    {{ where_fields(loc, radius) }}
+    <div class="field">
+      <label for="category">Kind of volunteering</label>
+      <select id="category" name="category">
+        {%- for value, label in categories %}
+        <option value="{{ value }}"{% if value == category_id %} selected{% endif %}>{{ label }}</option>
+        {%- endfor %}
+      </select>
+    </div>
+    {{ when_fields(day, slot, open_only) }}
+    <div class="filters-go">
+      <button class="btn primary" data-busy-text="Searching…"><svg class="i" aria-hidden="true"><use href="#i-search"/></svg><span class="label">Find places</span></button>
+    </div>
+  </form>
+
+  {%- if problem %}
+  <p class="alert" role="alert">{{ problem }}</p>
+  {%- endif %}
+
+  {%- if found %}
+  <div class="results-head" role="status">
+    <h2>{{ found.places | length }} place{{ "s" if found.places | length != 1 }} within {{ radius }} mile{{ "s" if radius != 1 }} of {{ here.label }}</h2>
+    <p class="small muted">{{ found.category.name }}, for {{ when }}. {{ found.category.ages }} Time commitments are typical for each kind of place, so ask the place to confirm hours and how to sign up.</p>
+  </div>
+  {%- if found.problem %}<p class="note">{{ found.problem }}</p>{% endif %}
+
+  {{ map_box(here, radius, found.places, saved, "Map of volunteering near " ~ here.label, numbered=True) }}
+
+  {%- if found.places %}
+  <div class="place-grid numbered-places">
+    {%- for place in found.places %}{{ place_card(place, saved, day, slot) }}{% endfor %}
+  </div>
+  {%- else %}
+  <div class="empty">
+    <p>No {{ found.category.name | lower }} found within {{ radius }} miles{% if open_only %} that are open {{ when }}{% endif %}. Try a longer distance{% if open_only %}, turn off “Hide places that are closed then”{% endif %}, or another kind of volunteering.</p>
+    <a class="btn" href="{{ found.search_link }}" target="_blank" rel="noopener">Search the web instead<span class="sr-only"> (opens in a new tab)</span></a>
+  </div>
+  {%- endif %}
+
+  {%- if found.web %}
+  <h2 class="section-title">From the web</h2>
+  <div class="place-grid">{% for site in found.web %}{{ link_card(site, saved, day, slot) }}{% endfor %}</div>
+  {%- endif %}
+
+  <h2 class="section-title">Online and national programs</h2>
+  <p class="muted small">Open to students anywhere, and many can be done from home.</p>
+  <div class="place-grid">{% for site in found.online %}{{ link_card(site, saved, day, slot) }}{% endfor %}</div>
+  {%- endif %}
+</section>
+{% endblock %}

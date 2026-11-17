@@ -1,0 +1,48 @@
+{# Chat messages. Used by chat.html, and by /chat/send to add new messages without reloading the page. #}
+{%- for m in messages %}
+{%- if m.role == "user" %}
+<div class="msg user" id="{{ m.id }}">
+  <div class="bubble"><span class="sr-only">You said: </span>{{ m.text }}</div>
+</div>
+{%- else %}
+<div class="msg sam{% if m.error %} error{% endif %}" id="{{ m.id }}">
+  <span class="avatar" aria-hidden="true"><svg class="i"><use href="#i-compass"/></svg></span>
+  <div class="bubble rich">
+    <span class="sr-only">SAM said: </span>
+    {%- if m.guard %}
+    <p class="guard-note"><svg class="i" aria-hidden="true"><use href="#i-shield"/></svg>SAM is coaching instead of answering, because {{ m.guard }}.</p>
+    {%- endif %}
+    {{ (m.main or m.text) | markdown(m.sources, m.id) }}
+
+    {%- for dive in m.deep_dives %}
+    <details class="deep-dive">
+      <summary>{{ dive.title }}</summary>
+      <div class="rich">{{ dive.body | markdown(m.sources, m.id) }}</div>
+    </details>
+    {%- endfor %}
+
+    {%- if m.sources %}
+    <div class="sources">
+      <span class="sources-title">{{ "Sources" if m.sources[0].cited else "Read more" }}</span>
+      <ol>
+        {%- for s in m.sources %}
+        <li>
+          <button type="button" class="cite" popovertarget="{{ m.id }}-src{{ s.n }}" aria-label="Source {{ s.n }}: {{ s.title }}">{{ s.n }}</button>
+          <a href="{{ s.url }}" target="_blank" rel="noopener noreferrer">{{ s.title }}<span class="sr-only"> (opens in a new tab)</span></a>
+          <span class="src-domain">{{ s.source }}</span>
+        </li>
+        {%- endfor %}
+      </ol>
+      {%- for s in m.sources %}
+      <div class="cite-pop" id="{{ m.id }}-src{{ s.n }}" popover>
+        <p class="cite-pop-title"><span class="cite static">{{ s.n }}</span>{{ s.title }}</p>
+        <p>{{ s.text }}</p>
+        <a href="{{ s.url }}" target="_blank" rel="noopener noreferrer">Open {{ s.url | domain }}<span class="sr-only"> (opens in a new tab)</span></a>
+      </div>
+      {%- endfor %}
+    </div>
+    {%- endif %}
+  </div>
+</div>
+{%- endif %}
+{%- endfor %}
