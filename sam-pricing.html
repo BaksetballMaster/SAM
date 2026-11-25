@@ -1,0 +1,524 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SAM Pricing</title>
+<meta name="description" content="Pricing for SAM, the Student Assistant Machine: find volunteering, sports clinics and learning resources near you.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --primary: #0F766E;          /* teal 700, white text 5.5:1 */
+    --primary-hover: #115E59;
+    --on-primary: #FFFFFF;
+    --secondary: #2DD4BF;
+    --accent: #D97706;
+    --on-accent: #1C1917;
+    --bg: #F0FDFA;
+    --bg-alt: #FFFFFF;
+    --fg: #134E4A;
+    --fg-strong: #042F2E;
+    --card: #FFFFFF;
+    --muted: #E6F4F1;
+    --muted-fg: #475569;
+    --border: #CCEAE4;
+    --border-strong: #5EEAD4;
+    --ring: #0D9488;
+    --check: #0F766E;
+    --dark-card: #042F2E;
+    --dark-card-fg: #CCFBF1;
+    --shadow: 0 1px 2px rgba(4,47,46,.06), 0 8px 24px rgba(4,47,46,.06);
+    --shadow-lg: 0 2px 4px rgba(4,47,46,.08), 0 20px 40px rgba(13,148,136,.16);
+    --radius: 20px;
+    --font-display: 'Nunito', system-ui, sans-serif;
+    --font-body: 'DM Sans', system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --primary: #2DD4BF; --primary-hover: #5EEAD4; --on-primary: #042F2E;
+      --accent: #F59E0B; --on-accent: #1C1917;
+      --bg: #071A19; --bg-alt: #0B2321; --fg: #CCFBF1; --fg-strong: #F0FDFA;
+      --card: #0F2A28; --muted: #123532; --muted-fg: #A7C4C0;
+      --border: #1D4642; --border-strong: #2DD4BF; --ring: #5EEAD4; --check: #5EEAD4;
+      --dark-card: #F0FDFA; --dark-card-fg: #134E4A;
+      --shadow: 0 1px 2px rgba(0,0,0,.4); --shadow-lg: 0 20px 40px rgba(0,0,0,.45);
+    }
+  }
+  :root[data-theme="dark"] {
+    --primary: #2DD4BF; --primary-hover: #5EEAD4; --on-primary: #042F2E;
+    --accent: #F59E0B; --on-accent: #1C1917;
+    --bg: #071A19; --bg-alt: #0B2321; --fg: #CCFBF1; --fg-strong: #F0FDFA;
+    --card: #0F2A28; --muted: #123532; --muted-fg: #A7C4C0;
+    --border: #1D4642; --border-strong: #2DD4BF; --ring: #5EEAD4; --check: #5EEAD4;
+    --dark-card: #F0FDFA; --dark-card-fg: #134E4A;
+    --shadow: 0 1px 2px rgba(0,0,0,.4); --shadow-lg: 0 20px 40px rgba(0,0,0,.45);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; background: var(--bg); color: var(--fg);
+    font: 400 16px/1.6 var(--font-body);
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3 { font-family: var(--font-display); color: var(--fg-strong); line-height: 1.15; margin: 0; text-wrap: balance; }
+  p { margin: 0; }
+  a { color: inherit; }
+  .wrap { max-width: 1140px; margin: 0 auto; padding: 0 16px; }
+  @media (min-width: 768px) { .wrap { padding: 0 32px; } }
+  :focus-visible { outline: 3px solid var(--ring); outline-offset: 3px; border-radius: 8px; }
+  .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  svg.i { width: 20px; height: 20px; flex: none; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* Buttons */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    min-height: 48px; padding: 0 22px; border-radius: 999px; border: 2px solid transparent;
+    font: 700 16px/1 var(--font-body); text-decoration: none; cursor: pointer;
+    transition: background-color .2s ease, color .2s ease, border-color .2s ease, transform .2s ease;
+  }
+  .btn:active { transform: translateY(1px); }
+  .btn-primary { background: var(--primary); color: var(--on-primary); }
+  .btn-primary:hover { background: var(--primary-hover); }
+  .btn-outline { background: transparent; color: var(--fg-strong); border-color: var(--border-strong); }
+  .btn-outline:hover { background: var(--muted); }
+  .btn-accent { background: var(--accent); color: var(--on-accent); }
+  .btn-accent:hover { filter: brightness(1.06); }
+  .btn-block { width: 100%; }
+
+  /* Nav */
+  header.nav {
+    position: sticky; top: 0; z-index: 20;
+    background: color-mix(in srgb, var(--bg) 85%, transparent);
+    backdrop-filter: saturate(1.4) blur(10px);
+    border-bottom: 1px solid var(--border);
+  }
+  .nav .wrap { display: flex; align-items: center; gap: 24px; height: 68px; }
+  .logo { display: flex; align-items: center; gap: 10px; font: 900 22px/1 var(--font-display); color: var(--fg-strong); text-decoration: none; }
+  .logo-mark { width: 36px; height: 36px; border-radius: 12px; background: var(--primary); color: var(--on-primary); display: grid; place-items: center; }
+  .nav-links { display: none; gap: 4px; margin-left: 8px; }
+  .nav-links a { padding: 10px 14px; border-radius: 999px; text-decoration: none; font-weight: 500; color: var(--muted-fg); transition: color .2s, background-color .2s; }
+  .nav-links a:hover { color: var(--fg-strong); background: var(--muted); }
+  .nav-links a[aria-current="page"] { color: var(--fg-strong); font-weight: 700; }
+  .nav-cta { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+  .nav-cta .btn { min-height: 44px; padding: 0 18px; font-size: 15px; }
+  .nav-cta .login { display: none; }
+  @media (min-width: 860px) { .nav-links { display: flex; } .nav-cta .login { display: inline-flex; } }
+
+  /* Hero */
+  .hero { padding: 64px 0 32px; text-align: center; }
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 999px;
+    background: var(--muted); color: var(--fg-strong); font-weight: 700; font-size: 14px;
+  }
+  .eyebrow svg.i { width: 16px; height: 16px; color: var(--primary); }
+  .hero h1 { font-size: clamp(36px, 6vw, 60px); font-weight: 900; letter-spacing: -1px; margin: 20px auto 16px; max-width: 16ch; }
+  .hero h1 .hl { color: var(--primary); }
+  .hero p.lede { font-size: clamp(17px, 2vw, 20px); color: var(--muted-fg); max-width: 60ch; margin: 0 auto; }
+
+  /* Toggle */
+  .billing { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 36px; }
+  .seg { display: inline-flex; padding: 5px; background: var(--card); border: 1px solid var(--border); border-radius: 999px; box-shadow: var(--shadow); }
+  .seg button {
+    min-height: 44px; padding: 0 22px; border: 0; border-radius: 999px; background: transparent;
+    font: 700 15px/1 var(--font-body); color: var(--muted-fg); cursor: pointer; transition: background-color .2s, color .2s;
+  }
+  .seg button[aria-pressed="true"] { background: var(--primary); color: var(--on-primary); }
+  .save-note { font-size: 14px; color: var(--muted-fg); }
+  .save-note strong { color: var(--accent); }
+
+  /* Cards */
+  .plans { display: grid; gap: 20px; padding: 40px 0 24px; grid-template-columns: 1fr; align-items: stretch; }
+  @media (min-width: 900px) { .plans { grid-template-columns: repeat(3, 1fr); } }
+  .plan {
+    position: relative; display: flex; flex-direction: column; gap: 20px;
+    padding: 28px; border-radius: var(--radius); background: var(--card);
+    border: 1px solid var(--border); box-shadow: var(--shadow);
+    transition: transform .25s ease, box-shadow .25s ease;
+  }
+  .plan:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
+  .plan.featured { border: 2px solid var(--primary); box-shadow: var(--shadow-lg); }
+  @media (min-width: 900px) { .plan.featured { transform: translateY(-12px); } .plan.featured:hover { transform: translateY(-16px); } }
+  .plan.dark { background: var(--dark-card); color: var(--dark-card-fg); border-color: transparent; }
+  .plan.dark h3, .plan.dark .amount { color: var(--dark-card-fg); }
+  .plan.dark .muted { color: color-mix(in srgb, var(--dark-card-fg) 78%, transparent); }
+  .plan.dark .feat svg.i { color: var(--secondary); }
+  .badge {
+    position: absolute; top: -14px; left: 50%; transform: translateX(-50%);
+    background: var(--accent); color: var(--on-accent); font: 800 13px/1 var(--font-display);
+    padding: 8px 14px; border-radius: 999px; white-space: nowrap; letter-spacing: .3px;
+  }
+  .plan-head { display: flex; align-items: center; gap: 12px; }
+  .plan-icon { width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center; background: var(--muted); color: var(--primary); }
+  .plan.dark .plan-icon { background: rgba(45,212,191,.16); color: var(--secondary); }
+  .plan h3 { font-size: 24px; font-weight: 800; }
+  .muted { color: var(--muted-fg); }
+  .price { display: flex; align-items: baseline; gap: 6px; min-height: 64px; flex-wrap: wrap; }
+  .amount { font: 900 48px/1 var(--font-display); color: var(--fg-strong); letter-spacing: -1px; font-variant-numeric: tabular-nums; }
+  .per { font-size: 15px; }
+  .price-sub { font-size: 14px; min-height: 22px; margin-top: -12px; }
+  .feats { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
+  .feat { display: flex; gap: 10px; align-items: flex-start; }
+  .feat svg.i { color: var(--check); margin-top: 3px; }
+  .plan .btn { margin-top: auto; }
+  .divider { height: 1px; background: var(--border); }
+  .plan.dark .divider { background: rgba(204,251,241,.18); }
+
+  .trust { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px 28px; padding: 8px 0 24px; color: var(--muted-fg); font-size: 15px; }
+  .trust span { display: inline-flex; align-items: center; gap: 8px; }
+  .trust svg.i { color: var(--primary); width: 18px; height: 18px; }
+
+  /* Promise band */
+  .promise { margin: 48px 0; }
+  .promise-inner {
+    display: grid; gap: 24px; padding: 32px; border-radius: var(--radius);
+    background: var(--muted); border: 1px solid var(--border);
+  }
+  @media (min-width: 860px) { .promise-inner { grid-template-columns: 1.1fr 1fr; align-items: center; padding: 40px 48px; } }
+  .promise h2 { font-size: clamp(26px, 3.5vw, 34px); font-weight: 900; margin-bottom: 10px; }
+  .chat { display: grid; gap: 10px; }
+  .bubble { padding: 12px 16px; border-radius: 18px; max-width: 92%; font-size: 15px; }
+  .bubble.you { background: var(--card); border: 1px solid var(--border); justify-self: end; border-bottom-right-radius: 6px; }
+  .bubble.sam { background: var(--primary); color: var(--on-primary); border-bottom-left-radius: 6px; }
+  .bubble .who { display: block; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: .6px; opacity: .8; margin-bottom: 2px; }
+
+  /* Section headings */
+  section h2.sec { font-size: clamp(28px, 4vw, 40px); font-weight: 900; text-align: center; margin-bottom: 12px; }
+  section p.sec-sub { text-align: center; color: var(--muted-fg); max-width: 56ch; margin: 0 auto 32px; }
+
+  /* Compare table */
+  .compare { padding: 48px 0; }
+  .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card); box-shadow: var(--shadow); }
+  table { width: 100%; border-collapse: collapse; min-width: 620px; }
+  caption { text-align: left; }
+  th, td { padding: 14px 18px; text-align: center; border-bottom: 1px solid var(--border); font-size: 15px; }
+  th[scope="row"] { text-align: left; font-weight: 500; color: var(--fg); }
+  thead th { font: 800 17px/1.2 var(--font-display); color: var(--fg-strong); background: var(--muted); position: sticky; top: 0; }
+  thead th:first-child { text-align: left; }
+  thead th.col-featured { color: var(--primary); }
+  tr.group th { text-align: left; background: var(--bg-alt); font: 800 13px/1 var(--font-body); text-transform: uppercase; letter-spacing: .8px; color: var(--muted-fg); padding-top: 20px; }
+  tbody tr:last-child td, tbody tr:last-child th { border-bottom: 0; }
+  td .yes { color: var(--check); display: inline-flex; }
+  td .no { color: var(--muted-fg); opacity: .6; display: inline-flex; }
+  td.col-featured { background: color-mix(in srgb, var(--primary) 6%, transparent); }
+
+  /* FAQ */
+  .faq { padding: 48px 0; }
+  .faq-list { max-width: 760px; margin: 0 auto; display: grid; gap: 12px; }
+  details { background: var(--card); border: 1px solid var(--border); border-radius: 16px; transition: border-color .2s; }
+  details[open] { border-color: var(--border-strong); }
+  summary {
+    list-style: none; cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 16px;
+    min-height: 56px; padding: 16px 20px; font: 700 17px/1.35 var(--font-display); color: var(--fg-strong);
+  }
+  summary::-webkit-details-marker { display: none; }
+  summary svg.i { transition: transform .25s ease; color: var(--primary); }
+  details[open] summary svg.i { transform: rotate(45deg); }
+  details .ans { padding: 0 20px 18px; color: var(--muted-fg); }
+
+  /* Final CTA */
+  .final { padding: 24px 0 72px; }
+  .final-inner {
+    text-align: center; padding: 48px 24px; border-radius: 28px;
+    background: linear-gradient(135deg, #0F766E 0%, #0D9488 55%, #14B8A6 100%); color: #FFFFFF;
+  }
+  .final h2 { color: #FFFFFF; font-size: clamp(28px, 4.5vw, 44px); font-weight: 900; margin-bottom: 12px; }
+  .final p { color: #E6FFFB; max-width: 52ch; margin: 0 auto 28px; font-size: 18px; }
+  .final .btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .final .btn-ghost { color: #FFFFFF; border-color: rgba(255,255,255,.7); background: transparent; }
+  .final .btn-ghost:hover { background: rgba(255,255,255,.12); }
+
+  footer { border-top: 1px solid var(--border); padding: 28px 0; color: var(--muted-fg); font-size: 14px; }
+  footer .wrap { display: flex; flex-wrap: wrap; gap: 12px 24px; justify-content: space-between; align-items: center; }
+  footer nav { display: flex; gap: 20px; flex-wrap: wrap; }
+  footer a { text-decoration: none; padding: 6px 0; }
+  footer a:hover { color: var(--fg-strong); text-decoration: underline; }
+
+  /* Motion */
+  .reveal { opacity: 0; transform: translateY(16px); transition: opacity .45s ease, transform .45s cubic-bezier(.34,1.4,.64,1); }
+  .reveal.in { opacity: 1; transform: none; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition: none !important; scroll-behavior: auto !important; }
+    .reveal { opacity: 1; transform: none; }
+    .plan:hover, .plan.featured:hover { transform: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Icon sprite (Lucide paths) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-compass" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m16.24 7.76-2.12 6.36-6.36 2.12 2.12-6.36z"/></symbol>
+  <symbol id="i-rocket" viewBox="0 0 24 24"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></symbol>
+  <symbol id="i-school" viewBox="0 0 24 24"><path d="M14 22v-4a2 2 0 1 0-4 0v4"/><path d="m18 10 4 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-8l4-2"/><path d="M18 5v17M6 5v17"/><path d="m4 6 8-4 8 4"/><circle cx="12" cy="9" r="2"/></symbol>
+  <symbol id="i-sparkles" viewBox="0 0 24 24"><path d="M9.94 14.06 8.5 19.5l-1.44-5.44L1.5 12.5l5.56-1.44L8.5 5.5l1.44 5.56 5.56 1.44z"/><path d="M19 3v4M17 5h4M19 17v4M17 19h4"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="i-card" viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="5" rx="2"/><path d="M2 10h20"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+  <symbol id="i-heart" viewBox="0 0 24 24"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></symbol>
+</svg>
+
+<a class="sr-only" href="#plans">Skip to plans</a>
+
+<header class="nav">
+  <div class="wrap">
+    <a class="logo" href="#" aria-label="SAM home">
+      <span class="logo-mark" aria-hidden="true"><svg class="i"><use href="#i-compass"/></svg></span>
+      SAM
+    </a>
+    <nav class="nav-links" aria-label="Primary">
+      <a href="#">Volunteer</a>
+      <a href="#">Sports</a>
+      <a href="#">Learn</a>
+      <a href="#plans" aria-current="page">Pricing</a>
+    </nav>
+    <div class="nav-cta">
+      <a class="btn btn-outline login" href="#">Log in</a>
+      <a class="btn btn-primary" href="#plans">Start free</a>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="wrap">
+      <span class="eyebrow"><svg class="i" aria-hidden="true"><use href="#i-heart"/></svg>Free forever for students</span>
+      <h1>Find what's next, <span class="hl">near you</span>.</h1>
+      <p class="lede">SAM, the Student Assistant Machine, finds volunteering, sports clinics and learning platforms around your area. It guides your thinking but never hands you the answers.</p>
+
+      <div class="billing">
+        <div class="seg" role="group" aria-label="Billing period">
+          <button type="button" data-cycle="monthly" aria-pressed="false">Monthly</button>
+          <button type="button" data-cycle="yearly" aria-pressed="true">Yearly</button>
+        </div>
+        <p class="save-note" aria-live="polite" id="save-note">Yearly saves <strong>$12</strong>: 3 months free</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="plans" aria-labelledby="plans-h">
+    <h2 id="plans-h" class="sr-only">Plans</h2>
+    <div class="wrap">
+      <div class="plans">
+
+        <!-- Explorer -->
+        <article class="plan reveal" aria-labelledby="p1">
+          <div class="plan-head">
+            <span class="plan-icon" aria-hidden="true"><svg class="i"><use href="#i-compass"/></svg></span>
+            <h3 id="p1">Explorer</h3>
+          </div>
+          <p class="muted">Everything you need to start discovering opportunities.</p>
+          <div class="price"><span class="amount">$0</span><span class="per muted">forever</span></div>
+          <p class="price-sub muted">No card, no catch</p>
+          <a class="btn btn-outline btn-block" href="#">Start free</a>
+          <div class="divider"></div>
+          <ul class="feats">
+            <li class="feat"><svg class="i" aria-hidden="true"><use href="#i-check"/></svg>Search volunteering, sports &amp; learning within 25 mi</li>
+            <li class="feat"><svg class="i" aria-hidden="true"><use href="#i-check"/></svg>Filter by type, time, and co-ed / gender</li>
+            <li class="feat"><svg class="i" aria-hidden="true"><use href="#i-check"/></svg>10 guided "Ask SAM" hints per day</li>
+            <li class="feat"><svg class="i" aria-hidden="true"><use href="#i-check"/></svg>Save up to 10 opportunities</li>
+          </ul>
+        </article>
+
+        <!-- Achiever -->
+        <article class="plan featured reveal" aria-labelledby="p2">
+          <span class="badge">Most popular</span>
+          <div class="plan-head">
+            <span class="plan-icon" aria-hidden="true"><svg class="i"><use href="#i-rocket"/></svg></span>
+            <h3 id="p2">Achiever</h3>
+          </div>
+          <p class="muted">For students building a portfolio for college applications.</p>
+          <div class="price">
+            <span class="amount" data-monthly="$4" data-yearly="$3">$3</span>
+            <span class="per muted">/ month</span>
+          </div>
+          <p class="price-sub muted" data-monthly="Billed monthly, cancel anytime" data-yearly="$36 billed yearly">$36 billed yearly</p>
+          <a class="btn btn-primary btn-block" href="#">Start 14-day free trial</a>
+          <div class="divider"></div>
+          <ul class="feats">
+            <li class="feat"><svg class="i" aria-hidden="true"><use href="#i-check"/></svg><span><strong>Everything in Explorer</strong>, plus:</span></li>
+            <li class="feat"><svg class="i" aria-hidden="true"><use href="#i-check"/></svg>Unlimited "Ask SAM" guided hints</li>
+            <li class="feat"><svg class="i" aria-hidden="true"><use href="#i-check"/></svg>Volunteer hour tracker with exportable log</li>
+            <li class="feat"><svg class="i" aria-hidden="true"><use href="#i-check"/></svg>Alerts when new clinics or events open nearby</li>
+            <li class="feat"><svg class="i" aria-hidden="true"><use href="#i-check"/></svg>Custom search radius up to 100 mi</li>
+            <li class="feat"><svg class="i" aria-hidden="true"><use href="#i-check"/></svg>Calendar sync (Google, Apple)</li>
+          </ul>
+        </article>
+
+        <!-- Schools -->
+        <article class="plan dark reveal" aria-labelledby="p3">
+          <div class="plan-head">
+            <span class="plan-icon" aria-hidden="true"><svg class="i"><use href="#i-school"/></svg></span>
+            <h3 id="p3">Schools</h3>
+          </div>
+          <p class="muted">For counselors and clubs supporting a whole student body.</p>
+          <div class="price"><span class="amount">$1</span><span class="per muted">/ student / year</span></div>
+          <p class="price-sub muted">Free for Title I schools</p>
+          <a class="btn btn-accent btn-block" href="#">Talk to us</a>
+          <div class="divider"></div>
+          <ul class="feats">
+            <li class="feat"><svg class="i" aria-hidden="true"><use href="#i-check"/></svg><span><strong>Achiever for every student</strong></span></li>
+            <li class="feat"><svg class="i" aria-hidden="true"><use href="#i-check"/></svg>Counselor dashboard &amp; hour verification</li>
+            <li class="feat"><svg class="i" aria-hidden="true"><use href="#i-check"/></svg>Post school-only events and clubs</li>
+            <li class="feat"><svg class="i" aria-hidden="true"><use href="#i-check"/></svg>Class rostering via Google Classroom</li>
+            <li class="feat"><svg class="i" aria-hidden="true"><use href="#i-check"/></svg>Student privacy agreement (FERPA &amp; COPPA)</li>
+          </ul>
+        </article>
+
+      </div>
+
+      <div class="trust">
+        <span><svg class="i" aria-hidden="true"><use href="#i-card"/></svg>No credit card for Explorer</span>
+        <span><svg class="i" aria-hidden="true"><use href="#i-shield"/></svg>No ads, no selling student data</span>
+        <span><svg class="i" aria-hidden="true"><use href="#i-x"/></svg>Cancel anytime</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="promise" aria-labelledby="promise-h">
+    <div class="wrap">
+      <div class="promise-inner reveal">
+        <div>
+          <span class="eyebrow"><svg class="i" aria-hidden="true"><use href="#i-sparkles"/></svg>The SAM promise</span>
+          <h2 id="promise-h" style="margin-top:14px">Hints, not homework answers. On every plan.</h2>
+          <p class="muted">SAM points you to the concept, the source, and the next question to ask yourself, so you actually learn it. Teachers can trust it, and you get better at figuring things out.</p>
+        </div>
+        <div class="chat" aria-label="Example conversation with SAM">
+          <p class="bubble you"><span class="who">You</span>What's the answer to #4? Solve 2x + 6 = 14</p>
+          <p class="bubble sam"><span class="who">SAM</span>Let's get there together. What could you do to both sides to get the 2x term by itself?</p>
+          <p class="bubble you"><span class="who">You</span>Subtract 6?</p>
+          <p class="bubble sam"><span class="who">SAM</span>Exactly. Try it, then see what's left to undo.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="compare" aria-labelledby="compare-h">
+    <div class="wrap">
+      <h2 class="sec" id="compare-h">Compare plans</h2>
+      <p class="sec-sub">Every plan includes local discovery and the no-answers promise.</p>
+      <div class="table-wrap reveal" tabindex="0" role="region" aria-labelledby="compare-h">
+        <table>
+          <caption class="sr-only">Feature comparison across Explorer, Achiever and Schools plans</caption>
+          <thead>
+            <tr><th scope="col">Feature</th><th scope="col">Explorer</th><th scope="col" class="col-featured">Achiever</th><th scope="col">Schools</th></tr>
+          </thead>
+          <tbody id="compare-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="faq" aria-labelledby="faq-h">
+    <div class="wrap">
+      <h2 class="sec" id="faq-h">Questions</h2>
+      <p class="sec-sub">Can't find what you need? Ask your counselor to reach out.</p>
+      <div class="faq-list">
+        <details>
+          <summary>Is Explorer really free forever?<svg class="i" aria-hidden="true"><use href="#i-plus"/></svg></summary>
+          <p class="ans">Yes. Finding opportunities near you should never cost money. Achiever adds tracking and alerts for students who want extra help organizing their portfolio.</p>
+        </details>
+        <details>
+          <summary>Will SAM do my homework for me?<svg class="i" aria-hidden="true"><use href="#i-plus"/></svg></summary>
+          <p class="ans">No, on purpose. SAM explains concepts, points to trustworthy sources and asks guiding questions, but it won't give final answers to assignments.</p>
+        </details>
+        <details>
+          <summary>Where do the opportunities come from?<svg class="i" aria-hidden="true"><use href="#i-plus"/></svg></summary>
+          <p class="ans">SAM gathers public listings from volunteer boards, parks &amp; rec departments, sports clubs and learning platforms, then filters them by your location, radius, interests and schedule.</p>
+        </details>
+        <details>
+          <summary>Do I need a parent's permission to sign up?<svg class="i" aria-hidden="true"><use href="#i-plus"/></svg></summary>
+          <p class="ans">Students under 13 need a parent or guardian to approve the account. We only ask for your ZIP code, not your home address.</p>
+        </details>
+        <details>
+          <summary>What if my family can't afford Achiever?<svg class="i" aria-hidden="true"><use href="#i-plus"/></svg></summary>
+          <p class="ans">Apply for a free Achiever pass from your account settings. No paperwork, just a short form. Title I schools also get SAM free.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <section class="final" aria-labelledby="final-h">
+    <div class="wrap">
+      <div class="final-inner reveal">
+        <h2 id="final-h">Your next opportunity is closer than you think.</h2>
+        <p>Enter your ZIP code and see what's happening near you in under a minute.</p>
+        <div class="btns">
+          <a class="btn btn-accent" href="#">Start free</a>
+          <a class="btn btn-ghost" href="#">Bring SAM to my school</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>&copy; 2026 SAM, Student Assistant Machine</span>
+    <nav aria-label="Footer">
+      <a href="#">Privacy</a><a href="#">Terms</a><a href="#">For parents</a><a href="#">Contact</a>
+    </nav>
+  </div>
+</footer>
+
+<script>
+  // Comparison table
+  const Y = 'y', N = 'n';
+  const rows = [
+    ['Discover'],
+    ['Volunteering, sports & learning search', Y, Y, Y],
+    ['Search radius', '25 mi', '100 mi', '100 mi'],
+    ['Saved opportunities', '10', 'Unlimited', 'Unlimited'],
+    ['New-event alerts', N, Y, Y],
+    ['Learn'],
+    ['"Ask SAM" guided hints', '10 / day', 'Unlimited', 'Unlimited'],
+    ['Source links for every hint', Y, Y, Y],
+    ['Organize'],
+    ['Volunteer hour tracker', N, Y, Y],
+    ['Calendar sync', N, Y, Y],
+    ['Counselor hour verification', N, N, Y],
+    ['School-only events', N, N, Y],
+  ];
+  const icon = (v) => v === Y
+    ? '<span class="yes"><svg class="i" aria-hidden="true"><use href="#i-check"/></svg><span class="sr-only">Included</span></span>'
+    : v === N
+    ? '<span class="no"><svg class="i" aria-hidden="true"><use href="#i-minus"/></svg><span class="sr-only">Not included</span></span>'
+    : v;
+  document.getElementById('compare-body').innerHTML = rows.map(r => r.length === 1
+    ? `<tr class="group"><th colspan="4" scope="colgroup">${r[0]}</th></tr>`
+    : `<tr><th scope="row">${r[0]}</th><td>${icon(r[1])}</td><td class="col-featured">${icon(r[2])}</td><td>${icon(r[3])}</td></tr>`
+  ).join('');
+
+  // Billing toggle
+  const btns = document.querySelectorAll('.seg button');
+  const note = document.getElementById('save-note');
+  function setCycle(c) {
+    btns.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.cycle === c)));
+    document.querySelectorAll('[data-monthly]').forEach(el => { el.textContent = el.dataset[c]; });
+    note.innerHTML = c === 'yearly' ? 'Yearly saves <strong>$12</strong>: 3 months free' : 'Switch to yearly and save <strong>$12</strong>';
+    try { localStorage.setItem('sam-cycle', c); } catch (e) {}
+  }
+  btns.forEach(b => b.addEventListener('click', () => setCycle(b.dataset.cycle)));
+  try { const s = localStorage.getItem('sam-cycle'); if (s) setCycle(s); } catch (e) {}
+
+  // Reveal on scroll
+  const els = document.querySelectorAll('.reveal');
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches || !('IntersectionObserver' in window)) {
+    els.forEach(e => e.classList.add('in'));
+  } else {
+    const io = new IntersectionObserver((entries) => entries.forEach((en) => {
+      if (en.isIntersecting) {
+        en.target.classList.add('in'); io.unobserve(en.target);
+        setTimeout(() => { en.target.style.transitionDelay = ''; }, 800);
+      }
+    }), { threshold: 0.12 });
+    els.forEach((e, i) => { e.style.transitionDelay = (e.closest('.plans') ? i * 60 : 0) + 'ms'; io.observe(e); });
+  }
+</script>
+</body>
+</html>
